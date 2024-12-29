@@ -28,7 +28,7 @@ export default class ObjectsController {
 
   async show({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail('id', params.id)
+      const object = await Object.findByOrFail('id', params.id)
       return object
     } catch (error) {
       response.status(400).json({ error: 'Object not found' })
@@ -36,10 +36,10 @@ export default class ObjectsController {
   }
   async update({ request, params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail('id', params.id)
+      const object = await Object.findByOrFail('id', params.id)
       const { tittle, location } = await request.validateUsing(updateObjetcValidator)
       object.merge({ tittle, location })
-      await object.save
+      await object.save()
       return object
     } catch (error) {
       response.status(400).json({ error: 'Object not found' })
@@ -48,7 +48,7 @@ export default class ObjectsController {
 
   async destroy({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail('id', params.id)
+      const object = await Object.findByOrFail('id', params.id)
       await object.delete()
       return response.status(203)
     } catch (error) {
