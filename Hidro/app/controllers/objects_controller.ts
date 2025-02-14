@@ -45,6 +45,16 @@ export default class ObjectsController {
       response.status(400).json({ error: 'Object not found' })
     }
   }
+  async edit({ params, response }: HttpContext) {
+    try {
+      const object = await Object.findByOrFail('id', params.id)
+      object.favorite = !object.favorite
+      await object.save()
+      return object
+    } catch (error) {
+      response.status(400).json({ error: 'Object not found' })
+    }
+  }
 
   async destroy({ params, response }: HttpContext) {
     try {

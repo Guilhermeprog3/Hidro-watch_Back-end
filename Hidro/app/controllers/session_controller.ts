@@ -6,8 +6,16 @@ export default class SessionController {
   async store({ request }: HttpContext) {
     const { email, password } = await request.validateUsing(createSessionValidator)
     const user = await User.verifyCredentials(email, password)
-    return User.accessTokens.create(user)
+    const accessToken = await User.accessTokens.create(user)
+
+    return {
+      token: accessToken,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    }
   }
+
   async destroy({ auth, response }: HttpContext) {
     const user = auth.user!
     await User.accessTokens.delete(user, user.currentAccessToken.identifier)
