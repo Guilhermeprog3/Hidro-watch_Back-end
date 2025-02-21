@@ -13,5 +13,6 @@ router
   .group(() => {
     router.resource('object', ObjectsController).apiOnly()
     router.resource('object.measurements', MeasurementsController).apiOnly()
+    router.patch('object/:id/edit', [ObjectsController, 'edit'])
   })
   .use(middleware.auth())
