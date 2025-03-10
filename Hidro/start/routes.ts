@@ -13,6 +13,11 @@ router
   .group(() => {
     router.resource('object', ObjectsController).apiOnly()
     router.resource('object.measurements', MeasurementsController).apiOnly()
+    router.get('object/:object_id/weekly-average', [MeasurementsController, 'weeklyAverage']);
     router.patch('object/:id/edit', [ObjectsController, 'edit'])
   })
   .use(middleware.auth())
+
+  router.post('/password/reset-code', [UsersController, 'forgotPassword'])
+  router.post('/password/validate-code', [UsersController, 'validateResetCode'])
+  router.patch('/password/reset', [UsersController, 'resetPassword'])

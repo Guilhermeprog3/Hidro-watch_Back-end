@@ -73,4 +73,36 @@ export default class MeasurementsController {
       })
     }
   }
+  async weeklyAverage({ params, response }: HttpContext) {
+    try {
+      const object = await Object.findOrFail(params.object_id);
+      const measurements = await Measurement.query()
+        .where('object_id', object.id)
+        .where('timestamp', '>=', DateTime.local().startOf('week').toSQL())
+        .where('timestamp', '<=', DateTime.local().endOf('week').toSQL());
+      const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const averages = daysOfWeek.reduce((acc, day) => {
+        acc[day] = 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      measurements.forEach((measurement) => {
+        const day = measurement.timestamp?.weekdayShort;
+        if (day) {
+          averages[day] = measurement.averageMeasurement;
+        }
+      });
+      const formattedAverages = daysOfWeek.map((day) => ({
+        day,
+        average: averages[day],
+      }));
+
+      return response.status(200).json(formattedAverages);
+    } catch (error) {
+      return response.status(404).json({
+        error: 'Object not found or no measurements available for the week.',
+      });
+    }
+  }
+  
 }

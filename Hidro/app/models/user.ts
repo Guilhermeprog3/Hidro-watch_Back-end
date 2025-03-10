@@ -28,6 +28,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare token: string | null
 
+  @column()
+  public reset_code?: string
+
+  @column.dateTime()
+  public reset_expires_at?: DateTime
+
   @hasMany(() => Object)
   declare objects: HasMany<typeof Object>
 
