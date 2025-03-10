@@ -73,36 +73,59 @@ export default class MeasurementsController {
       })
     }
   }
+
   async weeklyAverage({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail(params.object_id);
+      const object = await Object.findOrFail(params.object_id)
       const measurements = await Measurement.query()
         .where('object_id', object.id)
         .where('timestamp', '>=', DateTime.local().startOf('week').toSQL())
-        .where('timestamp', '<=', DateTime.local().endOf('week').toSQL());
-      const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        .where('timestamp', '<=', DateTime.local().endOf('week').toSQL())
+      const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
       const averages = daysOfWeek.reduce((acc, day) => {
-        acc[day] = 0;
-        return acc;
-      }, {} as Record<string, number>);
+        acc[day] = 0
+        return acc
+      }, {} as Record<string, number>)
 
       measurements.forEach((measurement) => {
-        const day = measurement.timestamp?.weekdayShort;
+        const day = measurement.timestamp?.weekdayShort
         if (day) {
-          averages[day] = measurement.averageMeasurement;
+          averages[day] = measurement.averageMeasurement
         }
-      });
+      })
       const formattedAverages = daysOfWeek.map((day) => ({
         day,
         average: averages[day],
-      }));
+      }))
 
-      return response.status(200).json(formattedAverages);
+      return response.status(200).json(formattedAverages)
     } catch (error) {
       return response.status(404).json({
         error: 'Object not found or no measurements available for the week.',
-      });
+      })
     }
   }
-  
+
+  async getLatestMeasurement({ params, response }: HttpContext) {
+    try {
+      const object = await Object.findOrFail(params.object_id)
+
+      const latestMeasurement = await Measurement.query()
+        .where('object_id', object.id)
+        .orderBy('timestamp', 'desc')
+        .first()
+
+      if (!latestMeasurement) {
+        return response.status(404).json({
+          error: 'No measurements found for this object.',
+        })
+      }
+
+      return response.status(200).json(latestMeasurement)
+    } catch (error) {
+      return response.status(500).json({
+        error: 'An error occurred while fetching the latest measurement.',
+      })
+    }
+  }
 }
