@@ -15,7 +15,7 @@ router
     router.resource('object', ObjectsController).apiOnly()
     router.resource('object.measurements', MeasurementsController).apiOnly()
     router.get('object/:object_id/weekly-average', [MeasurementsController, 'weeklyAverage'])
-    router.get('object/:object_id/measurements/latest', [MeasurementsController, 'getLatestMeasurement'])
+    router.get('object/:object_id/measurements-latest', [MeasurementsController, 'getLatestMeasurement'])
     router.patch('object/:id/edit', [ObjectsController, 'edit'])
   })
   .use(middleware.auth())

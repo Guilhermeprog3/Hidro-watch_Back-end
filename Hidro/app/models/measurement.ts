@@ -19,8 +19,8 @@ export default class Measurement extends BaseModel {
   @column()
   declare temperature: number
 
-  @column()
-  declare averageMeasurement: number
+  @column({serializeAs: 'averageMeasurement'})
+  declare average_measurement: number
 
   @column({ columnName: 'object_id' })
   declare objectId: number
