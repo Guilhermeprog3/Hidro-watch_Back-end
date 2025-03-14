@@ -19,8 +19,11 @@ export default class Measurement extends BaseModel {
   @column()
   declare temperature: number
 
-  @column({serializeAs: 'averageMeasurement'})
+  @column({ serializeAs: 'averageMeasurement' })
   declare average_measurement: number
+
+  @column()
+  declare connected: boolean
 
   @column({ columnName: 'object_id' })
   declare objectId: number

@@ -26,7 +26,7 @@ export default class MeasurementsController {
         turbidity,
         temperature,
         timestamp: DateTime.local(),
-        average_measurement: (ph + turbidity + temperature) / 3,
+        average_measurement: (ph + turbidity ) / 2,
       })
 
       return response.status(201).json(measurement)
