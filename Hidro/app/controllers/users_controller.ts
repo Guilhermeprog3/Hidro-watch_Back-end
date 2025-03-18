@@ -1,9 +1,13 @@
-import { HttpContext } from '@adonisjs/core/http'
+import { HttpContext  } from '@adonisjs/core/http'
 import User from '#models/user'
 import mail from '@adonisjs/mail/services/main'
 import crypto from 'crypto'
 import { DateTime } from 'luxon'
 import { createUserValidator, updateUserValidator } from '#validators/user'
+import Application from '@adonisjs/core/services/app'
+import { cuid } from '@adonisjs/core/helpers'
+import { updateProfileImageValidator } from '#validators/user'
+import fs from 'fs';
 export default class UsersController {
   async index() {
     const users = await User.query().preload('objects')
@@ -45,38 +49,44 @@ export default class UsersController {
   }
 
   async forgotPassword({ request, response }: HttpContext) {
-    const { email } = request.only(['email'])
-    const user = await User.findBy('email', email)
-
+    const { email } = request.only(['email']);
+    const user = await User.findBy('email', email);
+  
     if (!user) {
-      return response.status(404).json({ message: 'Usuário não encontrado' })
+      return response.status(404).json({ message: 'Usuário não encontrado' });
     }
 
-    const code = crypto.randomInt(100000, 999999).toString()
-
-    const resetExpiresAt = DateTime.now().plus({ minutes: 15 })
-
+    user.merge({
+      reset_code: null,
+      reset_expires_at: null,
+    });
+    await user.save();
+  
+    const code = crypto.randomInt(100000, 999999).toString();
+    const resetExpiresAt = DateTime.now().plus({ minutes: 2 });
+  
     user.merge({
       reset_code: code,
       reset_expires_at: resetExpiresAt,
-    })
-    await user.save()
-
+    });
+    await user.save();
+  
     const emailContent = `
       <h3>Recuperação de senha</h3>
       <p>Seu código de recuperação de senha é:</p>
       <h2>${code}</h2>
       <p>Esse código expirará em 15 minutos.</p>
-    `
+    `;
+  
     await mail.send((message) => {
       message
         .to(email)
         .from('no-reply@seusite.com')
         .subject('Recuperação de senha')
-        .html(emailContent)
-    })
-
-    return response.json({ message: 'Código enviado para seu e-mail' })
+        .html(emailContent);
+    });
+  
+    return response.json({ message: 'Código enviado para seu e-mail' });
   }
 
   async validateResetCode({ request, response }: HttpContext) {
@@ -115,5 +125,40 @@ export default class UsersController {
     await user.save()
 
     return response.json({ message: 'Senha alterada com sucesso' })
+  }
+
+  async updateProfileImage({ request, params, response }: HttpContext) {
+    const user = await User.find(params.id);
+    if (!user) {
+      return response.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+  
+    const { profile_image } = await request.validateUsing(updateProfileImageValidator);
+  
+    try {
+      const fileName = `${cuid()}.${profile_image.extname}`;
+  
+      await profile_image.move(Application.tmpPath('uploads'), {
+        name: fileName,
+        overwrite: true,
+      });
+  
+      if (user.profileImage) {
+        const oldImagePath = Application.tmpPath('uploads', user.profileImage);
+        try {
+          await fs.promises.unlink(oldImagePath);
+        } catch (error) {
+          console.error('Erro ao remover a imagem antiga:', error);
+        }
+      }
+  
+      user.profileImage = fileName;
+      await user.save();
+  
+      return response.json({ message: 'Imagem de perfil atualizada com sucesso.', user });
+    } catch (error) {
+      console.error('Erro ao processar a imagem:', error);
+      return response.status(500).json({ message: 'Erro ao processar a imagem.' });
+    }
   }
 }

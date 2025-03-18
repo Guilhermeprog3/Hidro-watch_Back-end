@@ -9,6 +9,7 @@ export default class extends BaseSchema {
       table.string('tittle').notNullable()
       table.string('location').notNullable()
       table.boolean('favorite').nullable().defaultTo(false)
+      table.boolean('connected').nullable().defaultTo(false)
       table
         .integer('user_id')
         .notNullable()

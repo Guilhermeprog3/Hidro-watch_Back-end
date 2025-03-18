@@ -21,6 +21,9 @@ export default class Objects extends BaseModel {
   @column()
   declare userId: number
 
+  @column()
+  declare connected: boolean
+
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 

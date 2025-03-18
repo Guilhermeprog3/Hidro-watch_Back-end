@@ -16,7 +16,6 @@ export default class MeasurementsController {
       })
     }
   }
-
   async store({ request, params, response }: HttpContext) {
     try {
       const { ph, turbidity, temperature } = await request.validateUsing(createMeasurementValidator)
@@ -35,7 +34,6 @@ export default class MeasurementsController {
       response.status(400).json({ error: 'erro' })
     }
   }
-
   async show({ params, response }: HttpContext) {
     try {
       const object = await Object.findOrFail(params.object_id);
@@ -51,7 +49,6 @@ export default class MeasurementsController {
       });
     }
   }
-
   async update({ request, params, response }: HttpContext) {
     try {
       const measurement = await Measurement.findByOrFail('id', params.id)
@@ -65,7 +62,6 @@ export default class MeasurementsController {
       response.status(400).json({ error: 'Object not found' })
     }
   }
-
   async destroy({ params, response }: HttpContext) {
     try {
       const measurement = await Measurement.findByOrFail('id', params.id)
@@ -78,7 +74,6 @@ export default class MeasurementsController {
       })
     }
   }
-
   async weeklyAverage({ params, response }: HttpContext) {
     try {
       const object = await Object.findOrFail(params.object_id);
@@ -93,7 +88,6 @@ export default class MeasurementsController {
       daysOfWeek.forEach(day => {
         weeklyData[day] = null;
       });
-  
       const measurements = await Measurement.query()
         .where('object_id', object.id)
         .whereBetween('timestamp', [
@@ -105,12 +99,10 @@ export default class MeasurementsController {
         const dayName = measurement.timestamp.toFormat('EEE');
         weeklyData[dayName] = measurement.average_measurement;
       });
-  
       const orderedWeeklyData = daysOfWeek.map(day => ({
         day,
         average_measurement: weeklyData[day] !== null ? weeklyData[day] : 0,
       }));
-  
       return response.status(200).json(orderedWeeklyData);
     } catch (error) {
       console.error(error);
@@ -132,7 +124,6 @@ export default class MeasurementsController {
 
         });
       }
-  
       return response.status(200).json(latestMeasurement);
     } catch (error) {
       console.error(error);

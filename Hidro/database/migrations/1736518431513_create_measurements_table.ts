@@ -11,7 +11,6 @@ export default class extends BaseSchema {
       table.decimal('turbidity').notNullable()
       table.decimal('temperature').notNullable()
       table.decimal('average_measurement').notNullable()
-      table.boolean('connected').nullable().defaultTo(false)
       table
         .integer('object_id')
         .notNullable()

@@ -21,3 +21,12 @@ export const updateUserValidator = vine.compile(
     password: vine.string().minLength(6),
   })
 )
+
+export const updateProfileImageValidator = vine.compile(
+  vine.object({
+    profile_image: vine.file({
+      size: '2mb',
+      extnames: ['jpg', 'png', 'jpeg'],
+    }),
+  })
+)
