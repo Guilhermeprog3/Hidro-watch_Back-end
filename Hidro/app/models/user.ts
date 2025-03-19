@@ -31,8 +31,6 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public reset_code?: string
 
-  @column()
-  declare profileImage: string | null
 
   @column.dateTime()
   public reset_expires_at?: DateTime

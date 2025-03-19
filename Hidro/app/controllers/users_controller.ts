@@ -4,10 +4,7 @@ import mail from '@adonisjs/mail/services/main'
 import crypto from 'crypto'
 import { DateTime } from 'luxon'
 import { createUserValidator, updateUserValidator } from '#validators/user'
-import Application from '@adonisjs/core/services/app'
-import { cuid } from '@adonisjs/core/helpers'
-import { updateProfileImageValidator } from '#validators/user'
-import fs from 'fs';
+
 export default class UsersController {
   async index() {
     const users = await User.query().preload('objects')
@@ -125,40 +122,5 @@ export default class UsersController {
     await user.save()
 
     return response.json({ message: 'Senha alterada com sucesso' })
-  }
-
-  async updateProfileImage({ request, params, response }: HttpContext) {
-    const user = await User.find(params.id);
-    if (!user) {
-      return response.status(404).json({ message: 'Usuário não encontrado.' });
-    }
-  
-    const { profile_image } = await request.validateUsing(updateProfileImageValidator);
-  
-    try {
-      const fileName = `${cuid()}.${profile_image.extname}`;
-  
-      await profile_image.move(Application.tmpPath('uploads'), {
-        name: fileName,
-        overwrite: true,
-      });
-  
-      if (user.profileImage) {
-        const oldImagePath = Application.tmpPath('uploads', user.profileImage);
-        try {
-          await fs.promises.unlink(oldImagePath);
-        } catch (error) {
-          console.error('Erro ao remover a imagem antiga:', error);
-        }
-      }
-  
-      user.profileImage = fileName;
-      await user.save();
-  
-      return response.json({ message: 'Imagem de perfil atualizada com sucesso.', user });
-    } catch (error) {
-      console.error('Erro ao processar a imagem:', error);
-      return response.status(500).json({ message: 'Erro ao processar a imagem.' });
-    }
   }
 }

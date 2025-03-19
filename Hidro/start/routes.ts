@@ -18,7 +18,6 @@ router
   .group(() => {
     // Rotas de usuário
     router.resource('user', UsersController).apiOnly()
-    router.patch('/user/:id/profile-image', [UsersController, 'updateProfileImage'])
 
     // Rotas de objetos e medições
     router.resource('object', ObjectsController).apiOnly()

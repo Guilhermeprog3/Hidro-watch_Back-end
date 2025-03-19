@@ -9,7 +9,6 @@ export default class extends BaseSchema {
       table.string('name').notNullable()
       table.string('email', 254).notNullable().unique()
       table.string('password').notNullable()
-      table.string('profile_image').nullable()
       table.string('token').nullable()
       table.string('reset_code', 6).nullable()
       table.timestamp('reset_expires_at').nullable()
