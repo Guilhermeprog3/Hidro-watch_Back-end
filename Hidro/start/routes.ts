@@ -18,6 +18,8 @@ router
   .group(() => {
     // Rotas de usuário
     router.resource('user', UsersController).apiOnly()
+    router.put('/user/:id/picture', [UsersController, 'uploadProfilePicture'])
+      .use(middleware.fileUpload())
 
     // Rotas de objetos e medições
     router.resource('object', ObjectsController).apiOnly()

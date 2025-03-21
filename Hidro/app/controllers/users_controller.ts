@@ -4,6 +4,7 @@ import mail from '@adonisjs/mail/services/main'
 import crypto from 'crypto'
 import { DateTime } from 'luxon'
 import { createUserValidator, updateUserValidator } from '#validators/user'
+import cloudinary from '#config/cloudinary'
 
 export default class UsersController {
   async index() {
@@ -122,5 +123,28 @@ export default class UsersController {
     await user.save()
 
     return response.json({ message: 'Senha alterada com sucesso' })
+  }
+
+  async uploadProfilePicture({ request, params, response }: HttpContext) {
+    const user = await User.findOrFail(params.id)
+    const filePath = request.body().profile_picture
+
+    if (!filePath) {
+      return response.status(400).json({ message: 'Nenhum arquivo enviado' })
+    }
+
+    try {
+      const result = await cloudinary.uploader.upload(filePath, {
+        folder: 'profile_pictures',
+      })
+
+      user.profile_picture = result.secure_url
+      await user.save()
+
+      return response.json({ message: 'Foto de perfil atualizada', user })
+    } catch (error) {
+      console.error(error)
+      return response.status(500).json({ message: 'Erro ao fazer upload da imagem' })
+    }
   }
 }
