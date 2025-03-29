@@ -5,6 +5,8 @@ import crypto from 'crypto'
 import { DateTime } from 'luxon'
 import { createUserValidator, updateUserValidator } from '#validators/user'
 import cloudinary from '#config/cloudinary'
+import { forgotPasswordEmailTemplate } from '../../templates/forgotPasswordEmail.js'
+import fs from 'fs/promises'
 
 export default class UsersController {
   async index() {
@@ -47,44 +49,39 @@ export default class UsersController {
   }
 
   async forgotPassword({ request, response }: HttpContext) {
-    const { email } = request.only(['email']);
-    const user = await User.findBy('email', email);
-  
+    const { email } = request.only(['email'])
+    const user = await User.findBy('email', email)
+
     if (!user) {
-      return response.status(404).json({ message: 'Usuário não encontrado' });
+      return response.status(404).json({ message: 'Usuário não encontrado' })
     }
 
     user.merge({
       reset_code: null,
       reset_expires_at: null,
-    });
-    await user.save();
-  
-    const code = crypto.randomInt(100000, 999999).toString();
-    const resetExpiresAt = DateTime.now().plus({ minutes: 2 });
-  
+    })
+    await user.save()
+
+    const code = crypto.randomInt(100000, 999999).toString()
+    const resetExpiresAt = DateTime.now().plus({ minutes: 10 })
+
     user.merge({
       reset_code: code,
       reset_expires_at: resetExpiresAt,
-    });
-    await user.save();
-  
-    const emailContent = `
-      <h3>Recuperação de senha</h3>
-      <p>Seu código de recuperação de senha é:</p>
-      <h2>${code}</h2>
-      <p>Esse código expirará em 15 minutos.</p>
-    `;
-  
+    })
+    await user.save()
+
+    const emailContent = forgotPasswordEmailTemplate(code)
+
     await mail.send((message) => {
       message
         .to(email)
-        .from('no-reply@seusite.com')
-        .subject('Recuperação de senha')
-        .html(emailContent);
-    });
-  
-    return response.json({ message: 'Código enviado para seu e-mail' });
+        .from('hidrowatch@gmail.com', 'Hidro Watch')
+        .subject('Recuperação de Senha - Hidro Watch')
+        .html(emailContent)
+    })
+
+    return response.json({ message: 'Código enviado para seu e-mail' })
   }
 
   async validateResetCode({ request, response }: HttpContext) {
@@ -134,12 +131,19 @@ export default class UsersController {
     }
 
     try {
+      if (user.profile_picture) {
+        const publicId = user.profile_picture.split('/').pop()?.split('.')[0]
+        await cloudinary.uploader.destroy(`profile_pictures/${publicId}`)
+      }
+
       const result = await cloudinary.uploader.upload(filePath, {
         folder: 'profile_pictures',
       })
 
       user.profile_picture = result.secure_url
       await user.save()
+
+      await fs.unlink(filePath)
 
       return response.json({ message: 'Foto de perfil atualizada', user })
     } catch (error) {

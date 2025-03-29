@@ -10,16 +10,18 @@ router.post('session', [SessionControler, 'store'])
 router.delete('session', [SessionControler, 'destroy'])
 
 // Rotas de recuperação de senha
-router.post('/password/reset-code', [UsersController, 'forgotPassword'])
-router.post('/password/validate-code', [UsersController, 'validateResetCode'])
-router.patch('/password/reset', [UsersController, 'resetPassword'])
+router.post('password/reset-code', [UsersController, 'forgotPassword'])
+router.post('password/validate-code', [UsersController, 'validateResetCode'])
+router.patch('password/reset', [UsersController, 'resetPassword'])
+
+router.resource('user', UsersController).apiOnly()
+router.patch('user/:id/picture', [UsersController, 'uploadProfilePicture'])
+  .use(middleware.fileUpload());
 
 router
   .group(() => {
     // Rotas de usuário
-    router.resource('user', UsersController).apiOnly()
-    router.put('/user/:id/picture', [UsersController, 'uploadProfilePicture'])
-      .use(middleware.fileUpload())
+    
 
     // Rotas de objetos e medições
     router.resource('object', ObjectsController).apiOnly()

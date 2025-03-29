@@ -6,7 +6,7 @@ export default class ObjectsController {
   
   async index({ auth }: HttpContext) {
     const user = auth.user!
-    await user.preload('objects', (query) => {
+    await user.load('objects', (query) => {
       query.orderBy('created_at', 'desc')
     })
     return user.objects

@@ -31,9 +31,11 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   public reset_code?: string
 
-  @column()
-  declare profile_picture: string | null 
-
+  @column({
+    consume: (value) => value ? value.trim() : null, // Garante que espaços extras são removidos
+    serialize: (value) => value ? value.trim() : null // Garante a serialização correta
+  })
+  declare profile_picture: string | null
 
   @column.dateTime()
   public reset_expires_at?: DateTime
@@ -48,4 +50,13 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare updatedAt: DateTime | null
 
   static accessTokens = DbAccessTokensProvider.forModel(User)
+
+  // Método para serialização personalizada
+  public serializeExtras() {
+    return {
+      ...this.serializeAttributes(),
+      ...this.serializeComputed(),
+      profile_picture: this.profile_picture?.trim() || null // Garante limpeza adicional
+    }
+  }
 }
