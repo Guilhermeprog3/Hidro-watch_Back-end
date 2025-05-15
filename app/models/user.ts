@@ -29,11 +29,17 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare token: string | null
 
   @column()
+  declare token_not: string | null
+
+  @column()
   public reset_code?: string
 
+  
+  
+
   @column({
-    consume: (value) => value ? value.trim() : null, // Garante que espaços extras são removidos
-    serialize: (value) => value ? value.trim() : null // Garante a serialização correta
+    consume: (value) => value ? value.trim() : null,
+    serialize: (value) => value ? value.trim() : null
   })
   declare profile_picture: string | null
 

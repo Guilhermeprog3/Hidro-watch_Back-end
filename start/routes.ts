@@ -21,7 +21,7 @@ router.patch('user/:id/picture', [UsersController, 'uploadProfilePicture'])
 router
   .group(() => {
     // Rotas de usuário
-    
+    router.patch('user/update-token', [UsersController, 'updateToken']).use(middleware.auth())
 
     // Rotas de objetos e medições
     router.resource('object', ObjectsController).apiOnly()

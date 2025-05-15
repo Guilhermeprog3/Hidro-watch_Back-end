@@ -5,6 +5,7 @@ export const createMeasurementValidator = vine.compile(
     ph: vine.number(),
     turbidity: vine.number(),
     temperature: vine.number(),
+    tds: vine.number(),
   })
 )
 
@@ -13,5 +14,6 @@ export const updateMeasurementValidator = vine.compile(
     ph: vine.number().optional(),
     turbidity: vine.number().optional(),
     temperature: vine.number().optional(),
+    tds: vine.number().optional(),
   })
 )

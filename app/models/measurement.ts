@@ -18,6 +18,8 @@ export default class Measurement extends BaseModel {
 
   @column()
   declare temperature: number
+  @column()
+  declare tds: number
 
   @column({ serializeAs: 'averageMeasurement' })
   declare average_measurement: number

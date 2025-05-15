@@ -11,16 +11,18 @@ const mailConfig = defineConfig({
 
   mailers: {
     smtp: transports.smtp({
-      host: env.get('SMTP_HOST'),
-      port: env.get('SMTP_PORT'),
+      host: env.get('SMTP_HOST') as string,
+      port: Number(env.get('SMTP_PORT')),
       auth: {
-        user: env.get('SMTP_USERNAME'),
-        pass: env.get('SMTP_PASSWORD'),
+        type: 'login',
+        user: env.get('SMTP_USERNAME') as string,
+        pass: env.get('SMTP_PASSWORD') as string,
       },
     }),
 
     resend: transports.resend({
-      key: env.get('RESEND_API_KEY'),
+      key: env.get('RESEND_API_KEY') as string,
+      baseUrl: 'https://api.resend.com'
     }),
   },
 })

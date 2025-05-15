@@ -10,6 +10,7 @@ export default class extends BaseSchema {
       table.decimal('ph').notNullable()
       table.decimal('turbidity').notNullable()
       table.decimal('temperature').notNullable()
+      table.decimal('tds').notNullable()
       table.decimal('average_measurement').notNullable()
       table
         .integer('object_id')

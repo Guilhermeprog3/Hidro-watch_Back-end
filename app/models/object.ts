@@ -6,6 +6,9 @@ import { type HasMany } from '@adonisjs/lucid/types/relations'
 import Measurement from './measurement.js'
 
 export default class Objects extends BaseModel {
+  static fromEntries(arg0: (string | number)[][]) {
+    throw new Error('Method not implemented.')
+  }
   @column({ isPrimary: true })
   declare id: number
 

@@ -56,12 +56,6 @@ export default class UsersController {
       return response.status(404).json({ message: 'Usuário não encontrado' })
     }
 
-    user.merge({
-      reset_code: null,
-      reset_expires_at: null,
-    })
-    await user.save()
-
     const code = crypto.randomInt(100000, 999999).toString()
     const resetExpiresAt = DateTime.now().plus({ minutes: 10 })
 
@@ -80,7 +74,6 @@ export default class UsersController {
         .subject('Recuperação de Senha - Hidro Watch')
         .html(emailContent)
     })
-
     return response.json({ message: 'Código enviado para seu e-mail' })
   }
 
@@ -101,15 +94,10 @@ export default class UsersController {
 
   async resetPassword({ request, response }: HttpContext) {
     const { code, new_password } = request.only(['code', 'new_password'])
-    console.log(new_password)
     const user = await User.findBy('reset_code', code)
 
     if (!user) {
       return response.status(404).json({ message: 'Código inválido' })
-    }
-
-    if (user.reset_expires_at! < DateTime.now()) {
-      return response.status(400).json({ message: 'Código expirado' })
     }
 
     user.merge({
@@ -123,32 +111,53 @@ export default class UsersController {
   }
 
   async uploadProfilePicture({ request, params, response }: HttpContext) {
-    const user = await User.findOrFail(params.id)
-    const filePath = request.body().profile_picture
-
+    const user = await User.findOrFail(params.id);
+    const filePath = request.body().profile_picture;
+  
     if (!filePath) {
-      return response.status(400).json({ message: 'Nenhum arquivo enviado' })
+      return response.status(400).json({ message: 'Nenhum arquivo enviado' });
     }
-
+  
     try {
       if (user.profile_picture) {
-        const publicId = user.profile_picture.split('/').pop()?.split('.')[0]
-        await cloudinary.uploader.destroy(`profile_pictures/${publicId}`)
+        const publicId = user.profile_picture.split('/').pop()?.split('.')[0];
+        await cloudinary.uploader.destroy(`profile_pictures/${publicId}`);
       }
-
       const result = await cloudinary.uploader.upload(filePath, {
         folder: 'profile_pictures',
-      })
+      });
 
-      user.profile_picture = result.secure_url
-      await user.save()
+      user.profile_picture = result.secure_url;
+      await user.save();
 
-      await fs.unlink(filePath)
-
-      return response.json({ message: 'Foto de perfil atualizada', user })
+      await fs.unlink(filePath);
+  
+      return response.json({
+        message: 'Foto de perfil atualizada',
+        profile_picture: user.profile_picture
+      });
+  
     } catch (error) {
-      console.error(error)
-      return response.status(500).json({ message: 'Erro ao fazer upload da imagem' })
+      console.error(error);
+      return response.status(500).json({ 
+        message: 'Erro ao fazer upload da imagem',
+        error: error.message 
+      });
     }
   }
+
+  async updateNotificationToken({ request, auth, response }: HttpContext) {
+    const user = auth.user!;
+    const { token } = request.only(['token']);
+  
+    user.token_not = token;
+    await user.save();
+  
+    return response.json({ 
+      success: true,
+      message: 'Token de notificação atualizado com sucesso.'
+    });
+  }
+
+
 }
