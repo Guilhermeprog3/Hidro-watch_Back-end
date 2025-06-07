@@ -58,7 +58,6 @@ export default class ObjectsController {
       response.status(400).json({ error: 'Object not found' })
     }
   }
-
   async destroy({ params, response }: HttpContext) {
     try {
       const object = await Object.findByOrFail('id', params.id)

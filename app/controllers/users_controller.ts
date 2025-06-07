@@ -1,11 +1,13 @@
 import { HttpContext  } from '@adonisjs/core/http'
 import User from '#models/user'
+import EmailVerification from '#models/emailverification'
 import mail from '@adonisjs/mail/services/main'
 import crypto from 'crypto'
 import { DateTime } from 'luxon'
 import { createUserValidator, updateUserValidator } from '#validators/user'
 import cloudinary from '#config/cloudinary'
 import { forgotPasswordEmailTemplate } from '../../templates/forgotPasswordEmail.js'
+import { VerificationEmailTemplate } from "../../templates/createEmail.js"
 import fs from 'fs/promises'
 
 export default class UsersController {
@@ -14,10 +16,81 @@ export default class UsersController {
     return users
   }
 
-  async store({ request }: HttpContext) {
-    const { name, email, password } = await request.validateUsing(createUserValidator)
-    const user = await User.create({ name, email, password })
-    return user
+  async initEmailVerification({ request, response }: HttpContext) {
+    const { email } = request.only(['email'])
+
+    const existingUser = await User.findBy('email', email)
+    if (existingUser) {
+      return response.conflict({ message: 'Este e-mail já está em uso' })
+    }
+
+    const code = crypto.randomInt(100000, 999999).toString()
+    const expiresAt = DateTime.now().plus({ minutes: 10 })
+    const emailContent = VerificationEmailTemplate(code)
+    try {
+      await EmailVerification.create({ email, code, expiresAt })
+      await mail.send((message) => {
+        message
+        .to(email)
+        .from('hidrowatch@gmail.com', 'Hidro Watch')
+        .subject('Criação de Conta - Hidro Watch')
+        .html(emailContent)
+      })
+
+      return response.ok({ 
+        message: 'Código de verificação enviado para seu e-mail',
+        expiresAt: expiresAt.toISO()
+      })
+    } catch (error) {
+      return response.internalServerError({ 
+        message: 'Falha ao enviar código de verificação' 
+      })
+    }
+  }
+  async confirmEmailVerification({ request, response }: HttpContext) {
+    const { email, code } = request.only(['email', 'code'])
+
+    try {
+      const verification = await EmailVerification.query()
+        .where('email', email)
+        .where('code', code)
+        .first()
+      if (!verification) {
+        return response.badRequest({ message: 'Código inválido' })
+      }
+
+      if (verification.expiresAt < DateTime.now()) {
+        await verification.delete()
+        return response.badRequest({ message: 'Código expirado' })
+      }
+      await verification.delete()
+      return response.ok({ 
+        message: 'E-mail verificado com sucesso',
+        verified: true
+      })
+    } catch (error) {
+      return response.internalServerError({ 
+        message: 'Falha ao verificar código' 
+      })
+    }
+  }
+
+
+  async store({ request, response }: HttpContext) {
+    const { email,name, password } = await request.validateUsing(createUserValidator)
+    try {
+      const user = await User.create({ name, email, password })
+
+      return response.created({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      })
+    } catch (error) {
+      return response.internalServerError({
+        message: 'Falha ao criar usuário'
+      })
+    }
   }
 
   async show({ params, response }: HttpContext) {
@@ -150,7 +223,7 @@ export default class UsersController {
     const user = auth.user!;
     const { token } = request.only(['token']);
   
-    user.token_not = token;
+    user.notificationToken = token;
     await user.save();
   
     return response.json({ 
@@ -158,6 +231,4 @@ export default class UsersController {
       message: 'Token de notificação atualizado com sucesso.'
     });
   }
-
-
 }

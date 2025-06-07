@@ -11,7 +11,6 @@ const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
   passwordColumnName: 'password',
 })
-
 export default class User extends compose(BaseModel, AuthFinder) {
   @column({ isPrimary: true })
   declare id: number
@@ -29,13 +28,10 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare token: string | null
 
   @column()
-  declare token_not: string | null
+  declare notificationToken: string | null
 
   @column()
   public reset_code?: string
-
-  
-  
 
   @column({
     consume: (value) => value ? value.trim() : null,
@@ -57,12 +53,11 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   static accessTokens = DbAccessTokensProvider.forModel(User)
 
-  // Método para serialização personalizada
   public serializeExtras() {
     return {
       ...this.serializeAttributes(),
       ...this.serializeComputed(),
-      profile_picture: this.profile_picture?.trim() || null // Garante limpeza adicional
+      profile_picture: this.profile_picture?.trim() || null
     }
   }
 }

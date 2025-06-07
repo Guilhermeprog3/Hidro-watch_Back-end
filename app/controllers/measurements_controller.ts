@@ -142,7 +142,7 @@ export default class MeasurementsController {
     }
   }
 
-  async checkWaterQuality(userId: number, ph?: number, turbidity?: number, temperature?: number, tds?: number) {
+   async checkWaterQuality(userId: number, ph?: number, turbidity?: number, temperature?: number, tds?: number) {
     if (ph === undefined || turbidity === undefined || temperature === undefined || tds === undefined) {
         console.error('Parâmetros de qualidade da água não fornecidos corretamente')
         return
@@ -155,28 +155,34 @@ export default class MeasurementsController {
     const MAX_TEMPERATURE = 30;
     const MAX_TDS = 500;
 
-    let alertMessage = '';
+    const alertMessages: string[] = [];
 
     if (ph < MIN_PH) {
-        alertMessage = `ATENÇÃO: pH ${ph.toFixed(2)} está abaixo do mínimo recomendado (${MIN_PH})`;
-    } else if (ph > MAX_PH) {
-        alertMessage = `ATENÇÃO: pH ${ph.toFixed(2)} está acima do máximo recomendado (${MAX_PH})`;
-    } else if (turbidity > MAX_TURBIDITY) {
-        alertMessage = `ATENÇÃO: Turbidez ${turbidity.toFixed(2)} está acima do máximo recomendado (${MAX_TURBIDITY})`;
-    } else if (temperature < MIN_TEMPERATURE) {
-        alertMessage = `ATENÇÃO: Temperatura ${temperature.toFixed(2)}°C está abaixo do mínimo recomendado (${MIN_TEMPERATURE}°C)`;
-    } else if (temperature > MAX_TEMPERATURE) {
-        alertMessage = `ATENÇÃO: Temperatura ${temperature.toFixed(2)}°C está acima do máximo recomendado (${MAX_TEMPERATURE}°C)`;
-    } else if (tds > MAX_TDS) {
-        alertMessage = `ATENÇÃO: TDS ${tds.toFixed(2)} está acima do máximo recomendado (${MAX_TDS})`;
+        alertMessages.push(`ATENÇÃO: pH ${ph.toFixed(2)} está abaixo do mínimo recomendado (${MIN_PH})`);
+    }
+    if (ph > MAX_PH) {
+        alertMessages.push(`ATENÇÃO: pH ${ph.toFixed(2)} está acima do máximo recomendado (${MAX_PH})`);
+    }
+    if (turbidity > MAX_TURBIDITY) {
+        alertMessages.push(`ATENÇÃO: Turbidez ${turbidity.toFixed(2)} está acima do máximo recomendado (${MAX_TURBIDITY})`);
+    }
+    if (temperature < MIN_TEMPERATURE) {
+        alertMessages.push(`ATENÇÃO: Temperatura ${temperature.toFixed(2)}°C está abaixo do mínimo recomendado (${MIN_TEMPERATURE}°C)`);
+    }
+    if (temperature > MAX_TEMPERATURE) {
+        alertMessages.push(`ATENÇÃO: Temperatura ${temperature.toFixed(2)}°C está acima do máximo recomendado (${MAX_TEMPERATURE}°C)`);
+    }
+    if (tds > MAX_TDS) {
+        alertMessages.push(`ATENÇÃO: TDS ${tds.toFixed(2)} está acima do máximo recomendado (${MAX_TDS})`);
     }
 
-    if (alertMessage) {
+    if (alertMessages.length > 0) {
+        const combinedMessage = alertMessages.join('; ');
         try {
             await this.notificationService.sendPushNotification(
                 userId,
                 'Alerta de Qualidade da Água',
-                alertMessage
+                combinedMessage
             );
         } catch (error) {
             console.error('Erro ao enviar notificação:', error);

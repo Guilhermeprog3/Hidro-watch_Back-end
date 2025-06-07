@@ -10,20 +10,30 @@ export default class SessionController {
       const user = await User.verifyCredentials(email, password)
       const accessToken = await User.accessTokens.create(user)
 
-      return {
-        token: accessToken,
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      }
+      return response.ok({
+        data: {
+          token: accessToken,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+          }
+        }
+      })
+
     } catch (error) {
       if (error instanceof errors.E_INVALID_CREDENTIALS) {
-        return response.status(401).send({
-          message: 'Credenciais inválidas. Verifique seu e-mail e senha.',
+        return response.unauthorized({
+          errors: [{
+            message: 'Credenciais inválidas',
+            field: 'email',
+          }]
         })
       }
-      return response.status(500).send({
-        message: 'Ocorreu um erro durante o login. Tente novamente mais tarde.',
+      return response.internalServerError({
+        errors: [{
+          message: 'Ocorreu um erro ao processar seu login',
+        }]
       })
     }
   }
