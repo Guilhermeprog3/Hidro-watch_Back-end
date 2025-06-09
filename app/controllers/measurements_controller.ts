@@ -4,6 +4,7 @@ import Object from '#models/object'
 import { createMeasurementValidator, updateMeasurementValidator } from '#validators/measurement'
 import { DateTime } from 'luxon'
 import ExpoNotificationService from '../service/ExpoNotificationService.js'
+import User from '#models/user'
 
 export default class MeasurementsController {
   private notificationService = new ExpoNotificationService()
@@ -21,26 +22,33 @@ export default class MeasurementsController {
   }
 
   async store({ request, params, response }: HttpContext) {
-    try {
-      const { ph, turbidity, temperature, tds } = await request.validateUsing(createMeasurementValidator)
-      const object = await Object.findOrFail(params.object_id)
-      const measurement = await object.related('measurements').create({
-        ph,
-        turbidity,
-        temperature,
-        tds,
-        timestamp: DateTime.local(),
-        average_measurement: (ph + turbidity+tds) / 3,
-      })
+  try {
+    const payload = await request.validateUsing(createMeasurementValidator)
+    const object = await Object.findOrFail(params.object_id)
+    
+    const measurement = await object.related('measurements').create({
+      ...payload,
+      timestamp: DateTime.local(),
+      average_measurement: (payload.ph + payload.turbidity + payload.tds) / 3,
+    })
 
-      await this.checkWaterQuality(object.userId, ph, turbidity, temperature, tds)
+    await this.checkWaterQuality(
+      object.userId,
+      payload.ph,
+      payload.turbidity,
+      payload.temperature,
+      payload.tds
+    )
 
-      return response.status(201).json(measurement)
-    } catch (error) {
-      console.log(error)
-      response.status(400).json({ error: 'erro' })
-    }
+    return response.status(201).json(measurement)
+  } catch (error) {
+    console.error(error)
+    return response.status(400).json({ 
+      error: 'Erro ao criar medição',
+      details: error.messages?.errors || error.message
+    })
   }
+}
 
   async show({ params, response }: HttpContext) {
     try {
@@ -142,51 +150,72 @@ export default class MeasurementsController {
     }
   }
 
-   async checkWaterQuality(userId: number, ph?: number, turbidity?: number, temperature?: number, tds?: number) {
-    if (ph === undefined || turbidity === undefined || temperature === undefined || tds === undefined) {
-        console.error('Parâmetros de qualidade da água não fornecidos corretamente')
-        return
-    }
+  async checkWaterQuality(
+  userId: number,
+  ph?: number | undefined,
+  turbidity?: number | undefined,
+  temperature?: number | undefined,
+  tds?: number | undefined
+) {
+  if (ph === undefined || turbidity === undefined || 
+      temperature === undefined || tds === undefined) {
+    console.warn('Parâmetros de qualidade da água incompletos', { ph, turbidity, temperature, tds });
+    return;
+  }
 
-    const MIN_PH = 6.5;
-    const MAX_PH = 8.5;
-    const MAX_TURBIDITY = 5.0;
-    const MIN_TEMPERATURE = 10;
-    const MAX_TEMPERATURE = 30;
-    const MAX_TDS = 500;
+  const STANDARDS = {
+    PH: { min: 6.5, max: 8.5 },
+    TURBIDITY: { max: 5.0 },
+    TEMPERATURE: { min: 10, max: 30 },
+    TDS: { max: 500 }
+  };
 
-    const alertMessages: string[] = [];
+  const alerts = [
+    ph < STANDARDS.PH.min && `pH baixo (${ph.toFixed(1)} < ${STANDARDS.PH.min})`,
+    ph > STANDARDS.PH.max && `pH alto (${ph.toFixed(1)} > ${STANDARDS.PH.max})`,
+    turbidity > STANDARDS.TURBIDITY.max && `Turbidez alta (${turbidity.toFixed(1)} > ${STANDARDS.TURBIDITY.max})`,
+    temperature < STANDARDS.TEMPERATURE.min && `Temperatura baixa (${temperature.toFixed(1)}°C < ${STANDARDS.TEMPERATURE.min}°C)`,
+    temperature > STANDARDS.TEMPERATURE.max && `Temperatura alta (${temperature.toFixed(1)}°C > ${STANDARDS.TEMPERATURE.max}°C)`,
+    tds > STANDARDS.TDS.max && `TDS alto (${tds.toFixed(1)} > ${STANDARDS.TDS.max})`
+  ].filter(Boolean);
 
-    if (ph < MIN_PH) {
-        alertMessages.push(`ATENÇÃO: pH ${ph.toFixed(2)} está abaixo do mínimo recomendado (${MIN_PH})`);
-    }
-    if (ph > MAX_PH) {
-        alertMessages.push(`ATENÇÃO: pH ${ph.toFixed(2)} está acima do máximo recomendado (${MAX_PH})`);
-    }
-    if (turbidity > MAX_TURBIDITY) {
-        alertMessages.push(`ATENÇÃO: Turbidez ${turbidity.toFixed(2)} está acima do máximo recomendado (${MAX_TURBIDITY})`);
-    }
-    if (temperature < MIN_TEMPERATURE) {
-        alertMessages.push(`ATENÇÃO: Temperatura ${temperature.toFixed(2)}°C está abaixo do mínimo recomendado (${MIN_TEMPERATURE}°C)`);
-    }
-    if (temperature > MAX_TEMPERATURE) {
-        alertMessages.push(`ATENÇÃO: Temperatura ${temperature.toFixed(2)}°C está acima do máximo recomendado (${MAX_TEMPERATURE}°C)`);
-    }
-    if (tds > MAX_TDS) {
-        alertMessages.push(`ATENÇÃO: TDS ${tds.toFixed(2)} está acima do máximo recomendado (${MAX_TDS})`);
-    }
+  if (alerts.length > 0) {
+    const title = '⚠️ Alerta de Qualidade da Água';
+    const message = alerts.join('\n• ');
+    const data = {
+      type: 'water_alert',
+      values: { ph, turbidity, temperature, tds }
+    };
 
-    if (alertMessages.length > 0) {
-        const combinedMessage = alertMessages.join('; ');
+    try {
+      await this.notificationService.sendToUser(
+        userId,
+        title,
+        message,
+        data
+      );
+      
+      console.log(`Notificação enviada para usuário ${userId}`);
+    } catch (error) {
+      console.error(`Falha ao enviar notificação para usuário ${userId}:`, error);
+      
+      if (error.message.includes('DeviceNotRegistered')) {
         try {
-            await this.notificationService.sendPushNotification(
-                userId,
-                'Alerta de Qualidade da Água',
-                combinedMessage
+          const user = await User.findOrFail(userId);
+          if (user.notificationToken) {
+            console.warn(`Tentando fallback com token direto para usuário ${userId}`);
+            await this.notificationService.sendToToken(
+              user.notificationToken,
+              title,
+              message,
+              data
             );
-        } catch (error) {
-            console.error('Erro ao enviar notificação:', error);
+          }
+        } catch (fallbackError) {
+          console.error(`Falha no fallback para usuário ${userId}:`, fallbackError);
         }
+      }
     }
   }
+}
 }

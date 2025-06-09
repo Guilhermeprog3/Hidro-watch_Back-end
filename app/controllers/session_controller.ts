@@ -11,13 +11,11 @@ export default class SessionController {
       const accessToken = await User.accessTokens.create(user)
 
       return response.ok({
-        data: {
           token: accessToken,
           user: {
             id: user.id,
             name: user.name,
             email: user.email,
-          }
         }
       })
 

@@ -15,7 +15,6 @@ export default class UsersController {
     const users = await User.query().preload('objects')
     return users
   }
-
   async initEmailVerification({ request, response }: HttpContext) {
     const { email } = request.only(['email'])
 
@@ -74,7 +73,6 @@ export default class UsersController {
       })
     }
   }
-
 
   async store({ request, response }: HttpContext) {
     const { email,name, password } = await request.validateUsing(createUserValidator)
@@ -218,14 +216,12 @@ export default class UsersController {
       });
     }
   }
-
   async updateNotificationToken({ request, auth, response }: HttpContext) {
     const user = auth.user!;
     const { token } = request.only(['token']);
   
     user.notificationToken = token;
     await user.save();
-  
     return response.json({ 
       success: true,
       message: 'Token de notificação atualizado com sucesso.'
