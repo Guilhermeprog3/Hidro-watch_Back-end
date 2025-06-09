@@ -1,0 +1,637 @@
+openapi: 3.0.1
+info:
+  title: Hidro-watch API
+  version: 1.0.0
+  description: |
+    API para o backend do projeto Hidro-watch, responsável por gerenciar usuários, dispositivos de monitoramento de água e suas medições.
+
+    ### Desenvolvedor
+    * [Guilherme Silva Rios](https://guilhermeriosdev.vercel.app)
+
+
+servers:
+  - url: http://127.0.0.1:3333
+    description: Servidor de Desenvolvimento Local
+  - url: https://hidro-watch-backend.onrender.com
+    description: Servidor de Produção (Exemplo)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Insira o token JWT com o prefixo 'Bearer '."
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Nome do Usuário"
+        email:
+          type: string
+          format: email
+          example: "usuario@exemplo.com"
+        profile_picture:
+          type: string
+          format: url
+          nullable: true
+          example: "http://res.cloudinary.com/..."
+        notificationToken:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Object:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        tittle:
+          type: string
+          example: "Caixa d'água Cozinha"
+        location:
+          type: string
+          example: "Cozinha"
+        favorite:
+          type: boolean
+          example: false
+        connected:
+          type: boolean
+          example: true
+        userId:
+          type: integer
+          example: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Measurement:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        timestamp:
+          type: string
+          format: date-time
+        ph:
+          type: number
+          format: float
+          example: 7.1
+        turbidity:
+          type: number
+          format: float
+          example: 4.8
+        temperature:
+          type: number
+          format: float
+          example: 25.5
+        tds:
+          type: number
+          format: float
+          example: 300
+        averageMeasurement:
+          type: number
+          format: float
+          example: 102.43
+        objectId:
+          type: integer
+          example: 1
+
+    CreateUserInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 6
+    
+    CreateObjectInput:
+      type: object
+      required: [tittle, location]
+      properties:
+        tittle:
+          type: string
+        location:
+          type: string
+
+    CreateMeasurementInput:
+      type: object
+      required: [ph, turbidity, temperature, tds]
+      properties:
+        ph:
+          type: number
+        turbidity:
+          type: number
+        temperature:
+          type: number
+        tds:
+          type: number
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: object
+          properties:
+            type:
+              type: string
+              example: "bearer"
+            token:
+              type: string
+        user:
+          $ref: '#/components/schemas/User'
+          
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+
+security:
+  - bearerAuth: []
+
+paths:
+  /session:
+    post:
+      tags: [Sessão]
+      summary: Login de usuário
+      security: []
+      description: Autentica um usuário com e-mail e senha e retorna um token de acesso.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: Login bem-sucedido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciais inválidas.
+    delete:
+      tags: [Sessão]
+      summary: Logout de usuário
+      description: Invalida o token de acesso do usuário autenticado.
+      responses:
+        '203':
+          description: Logout bem-sucedido.
+        '401':
+          description: Não autenticado.
+          
+  /email/verify-init:
+    post:
+      tags: [Usuário]
+      summary: Iniciar verificação de e-mail
+      security: []
+      description: Envia um código de verificação para um e-mail.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { email: { type: string, format: email } }
+      responses:
+        '200':
+          description: Código enviado.
+        '409':
+          description: E-mail já em uso.
+
+  /email/verify-confirm:
+    post:
+      tags: [Usuário]
+      summary: Confirmar código de verificação de e-mail
+      security: []
+      description: Valida o código de verificação enviado para o e-mail.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                code: { type: string }
+      responses:
+        '200':
+          description: E-mail verificado com sucesso.
+
+  /password/reset-code:
+    post:
+      tags: [Usuário]
+      summary: Solicitar código de redefinição de senha
+      security: []
+      description: Envia um código para o e-mail do usuário para redefinir a senha.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { email: { type: string, format: email } }
+      responses:
+        '200':
+          description: Código enviado.
+
+  /password/validate-code:
+    post:
+      tags: [Usuário]
+      summary: Validar código de redefinição
+      security: []
+      description: Valida o código de redefinição de senha.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { code: { type: string } }
+      responses:
+        '200':
+          description: Código válido.
+
+  /password/reset:
+    patch:
+      tags: [Usuário]
+      summary: Redefinir senha
+      security: []
+      description: Altera a senha do usuário usando um código de redefinição válido.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: { type: string }
+                new_password: { type: string, minLength: 8 }
+      responses:
+        '200':
+          description: Senha alterada com sucesso.
+          
+  /users:
+    post:
+      tags: [Usuário]
+      summary: Criar novo usuário
+      security: []
+      description: Registra um novo usuário no sistema.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserInput'
+      responses:
+        '201':
+          description: Usuário criado com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /user/{id}:
+    get:
+      tags: [Usuário]
+      summary: Obter detalhes de um usuário
+      description: Retorna os dados de um usuário específico, incluindo seus objetos.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Usuário não encontrado.
+    patch:
+      tags: [Usuário]
+      summary: Atualizar usuário
+      description: Atualiza o nome e/ou a senha de um usuário.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                password: { type: string, minLength: 6 }
+      responses:
+        '200':
+          description: Usuário atualizado.
+    delete:
+      tags: [Usuário]
+      summary: Deletar usuário
+      description: Remove um usuário do sistema.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '203':
+          description: Usuário deletado.
+        '404':
+          description: Usuário não encontrado.
+
+  /user/{id}/picture:
+    patch:
+      tags: [Usuário]
+      summary: Upload de foto de perfil
+      description: Faz o upload ou atualiza a foto de perfil do usuário.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                profile_picture:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Foto atualizada.
+          
+  /users/update-token:
+    patch:
+      tags: [Usuário]
+      summary: Atualizar token de notificação
+      description: Atualiza o token do Expo para envio de notificações push.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: { token: { type: string } }
+      responses:
+        '200':
+          description: Token atualizado com sucesso.
+
+  /object:
+    get:
+      tags: [Objetos]
+      summary: Listar objetos do usuário
+      description: Retorna uma lista de todos os objetos (dispositivos) pertencentes ao usuário autenticado.
+      responses:
+        '200':
+          description: Lista de objetos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Object'
+    post:
+      tags: [Objetos]
+      summary: Criar novo objeto
+      description: Cria um novo objeto (dispositivo) para o usuário autenticado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateObjectInput'
+      responses:
+        '201':
+          description: Objeto criado com sucesso.
+
+  /object/{id}:
+    get:
+      tags: [Objetos]
+      summary: Obter detalhes de um objeto
+      description: Retorna os dados de um objeto específico.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sucesso.
+        '404':
+          description: Objeto não encontrado.
+    patch:
+      tags: [Objetos]
+      summary: Atualizar um objeto
+      description: Atualiza o título e/ou a localização de um objeto.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tittle: { type: string }
+                location: { type: string }
+      responses:
+        '200':
+          description: Objeto atualizado.
+    delete:
+      tags: [Objetos]
+      summary: Deletar um objeto
+      description: Remove um objeto e todas as suas medições associadas.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '203':
+          description: Objeto deletado.
+
+  /object/{id}/edit:
+    patch:
+      tags: [Objetos]
+      summary: Favoritar/desfavoritar objeto
+      description: Alterna o status de 'favorito' de um objeto.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status de favorito alterado.
+  
+  /object/{id}/toggle-connected:
+    patch:
+      tags: [Objetos]
+      summary: Alternar status de conexão
+      description: Alterna o status de 'conectado' de um objeto.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Status de conexão alterado.
+
+  /object/{object_id}/measurements:
+    get:
+      tags: [Medições]
+      summary: Listar medições de um objeto
+      description: Retorna todas as medições de um objeto específico.
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Lista de medições.
+    post:
+      tags: [Medições]
+      summary: Registrar nova medição
+      description: Adiciona uma nova medição a um objeto. Dispara notificações se a qualidade da água estiver fora dos padrões.
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMeasurementInput'
+      responses:
+        '201':
+          description: Medição criada.
+
+  /object/{object_id}/measurements/{id}:
+    get:
+      tags: [Medições]
+      summary: Obter uma medição específica
+      description: Retorna os detalhes de uma medição específica de um objeto.
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sucesso.
+        '404':
+          description: Medição não encontrada.
+    delete:
+      tags: [Medições]
+      summary: Deletar uma medição
+      description: Remove uma medição específica.
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '203':
+          description: Medição deletada.
+
+  /object/{object_id}/weekly-average:
+    get:
+      tags: [Medições]
+      summary: Média semanal de medições
+      description: Retorna a média de medições para cada dia dos últimos 7 dias.
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sucesso.
+
+  /object/{object_id}/measurements-latest:
+    get:
+      tags: [Medições]
+      summary: Obter a última medição
+      description: Retorna a medição mais recente de um objeto.
+      parameters:
+        - name: object_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Sucesso.
+        '404':
+          description: Nenhuma medição encontrada.
