@@ -118,10 +118,6 @@ npm run dev
 | `npm run dev`        | Inicia o servidor com Hot Reload                   |
 | `npm run build`      | Compila o projeto TypeScript → JavaScript          |
 | `npm start`          | Inicia o servidor em modo produção                 |
-| `npm run test`       | Executa a suíte de testes com Japa                 |
-| `npm run lint`       | Verifica o código com ESLint                       |
-| `npm run format`     | Formata o código com Prettier                      |
-| `npm run typecheck`  | Verifica os tipos TypeScript sem emitir arquivos   |
 
 ---
 
