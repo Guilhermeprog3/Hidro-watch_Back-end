@@ -98,33 +98,59 @@ export default class MeasurementsController {
 
   async weeklyAverage({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail(params.object_id);
-      const today = DateTime.local();
-      const startDate = today.minus({ days: 6 }).startOf('day');
-  
+      const object = await Object.findOrFail(params.object_id)
+      const today = DateTime.local()
+      const startDate = today.minus({ days: 6 }).startOf('day')
+
       const measurements = await Measurement.query()
         .where('object_id', object.id)
         .where('timestamp', '>=', startDate.toISO())
-        .orderBy('timestamp', 'asc');
-  
-      const weeklyData = Array.from({ length: 7 }, (_, i) => {
-        const date = startDate.plus({ days: i });
+
+      // Agrupa as medições por dia para calcular a soma e a contagem
+      const dailySums = new Map<string, {
+        ph: number
+        turbidity: number
+        temperature: number
+        tds: number
+        count: number
+      }>()
+
+      measurements.forEach((measurement) => {
+        const dateKey = measurement.timestamp.toISODate()
+        if (dateKey) {
+          let dayData = dailySums.get(dateKey)
+          if (!dayData) {
+            dayData = { ph: 0, turbidity: 0, temperature: 0, tds: 0, count: 0 }
+            dailySums.set(dateKey, dayData)
+          }
+          dayData.ph += measurement.ph
+          dayData.turbidity += measurement.turbidity
+          dayData.temperature += measurement.temperature
+          dayData.tds += measurement.tds
+          dayData.count++
+        }
+      })
+
+      // Gera a resposta final com as médias dos últimos 7 dias
+      const weeklyAverages = Array.from({ length: 7 }, (_, i) => {
+        const date = startDate.plus({ days: i })
+        const dateKey = date.toISODate()
+        const sums = dateKey ? dailySums.get(dateKey) : null
+
         return {
           day: date.toFormat('EEE'),
-          average_measurement: 0
-        };
-      });
-  
-      measurements.forEach(measurement => {
-        const dayIndex = Math.floor(measurement.timestamp.diff(startDate, 'days').days);
-        if (dayIndex >= 0 && dayIndex < 7) {
-          weeklyData[dayIndex].average_measurement = measurement.average_measurement;
+          date: dateKey,
+          ph: sums && sums.count > 0 ? sums.ph / sums.count : 0,
+          turbidity: sums && sums.count > 0 ? sums.turbidity / sums.count : 0,
+          temperature: sums && sums.count > 0 ? sums.temperature / sums.count : 0,
+          tds: sums && sums.count > 0 ? sums.tds / sums.count : 0,
         }
-      });
-  
-      return response.status(200).json(weeklyData);
+      })
+
+      return response.status(200).json(weeklyAverages)
     } catch (error) {
-      console.error(error);
+      console.error(error)
+      return response.status(500).json({ error: 'An error occurred while fetching weekly averages.' })
     }
   }
 
