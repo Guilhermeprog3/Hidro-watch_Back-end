@@ -122,7 +122,6 @@ export default class MeasurementsController {
         dayData = { ph: 0, turbidity: 0, temperature: 0, tds: 0, count: 0 }
         dailySums.set(dateKey, dayData)
       }
-      // CORREÇÃO: Garante que os valores sejam somados como números
       dayData.ph += Number(measurement.ph)
       dayData.turbidity += Number(measurement.turbidity)
       dayData.temperature += Number(measurement.temperature)

@@ -94,7 +94,7 @@ export default class UsersController {
   async show({ params, response }: HttpContext) {
     try {
       const user = await User.findByOrFail('id', params.id)
-      await user.load('objects')
+      await user.load('device')
       return user
     } catch (error) {
       return response.status(404).json({ message: 'User not found' })
