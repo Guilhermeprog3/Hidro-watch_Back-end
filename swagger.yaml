@@ -1,3 +1,181 @@
+A documentação do projeto foi atualizada para refletir as mudanças recentes no código. As principais alterações foram realizadas nos arquivos README.md e swagger.yaml para garantir consistência, precisão e clareza.
+
+README.md Atualizado
+O arquivo README.md foi revisado para padronizar a terminologia, substituindo referências a "Objetos" por "Dispositivos", de acordo com a nomenclatura utilizada no código-fonte, como nos models e controllers.
+
+Markdown
+
+# 💧 Hidro-Watch API
+
+> Backend da aplicação Hidro-Watch, um sistema inteligente de monitoramento de qualidade da água.
+
+## 📖 Sobre o Projeto
+
+Este é o backend da aplicação Hidro-Watch, desenvolvido com **AdonisJS v6**. Ele fornece uma **API RESTful completa** para gerenciar:
+
+- Usuários
+- Dispositivos de monitoramento
+- Medições de qualidade da água
+
+O sistema foi projetado para ser **robusto, seguro e escalável**, com autenticação baseada em token, validação com VineJS, envio de notificações via Expo e upload de imagens com Cloudinary.
+
+---
+
+## 📚 Documentação da API
+
+A documentação Swagger dos endpoints está disponível em:
+
+http://127.0.0.1:3333/docs
+
+
+
+---
+
+## ✨ Funcionalidades Principais
+
+### 👤 Gerenciamento de Usuários
+- Login/Logout com e-mail e senha
+- Cadastro de novos usuários com validação
+- Verificação de e-mail em duas etapas
+- Recuperação e redefinição de senha
+- Upload de foto de perfil via Cloudinary
+
+### 💧 Gerenciamento de Dispositivos
+- CRUD completo dos dispositivos
+- Favoritar dispositivos
+
+### 📊 Gerenciamento de Medições
+- Registro de medições: **pH, turbidez, temperatura, TDS**
+- Cálculo automático da média semanal
+- Acesso à última medição
+
+### 🔔 Notificações
+- Envio de notificações push via Expo quando parâmetros estão fora dos limites ideais
+
+---
+
+## 🛠️ Tecnologias Utilizadas
+
+- **Backend:** AdonisJS v6
+- **Linguagem:** TypeScript
+- **Banco de Dados:** PostgreSQL + Lucid ORM
+- **Autenticação:** Token-based (`@adonisjs/auth`)
+- **Validação:** VineJS
+- **Upload de Arquivos:** Cloudinary
+- **Notificações Push:** Expo SDK
+- **Email:** Adonis Mail (SMTP)
+
+---
+
+## 🚀 Começando
+
+### ✅ Pré-requisitos
+
+- Node.js (v20.x)
+- npm, yarn ou pnpm
+- PostgreSQL
+
+### 📥 Instalação
+
+Clone o repositório:
+
+```bash
+git clone [https://github.com/guilhermeprog3/hidro-watch_back-end.git](https://github.com/guilhermeprog3/hidro-watch_back-end.git)
+cd hidro-watch_back-end
+Instale as dependências:
+
+Bash
+
+npm install
+Copie o arquivo .env.example para .env:
+
+Bash
+
+cp .env.example .env
+Gere uma chave da aplicação:
+
+Bash
+
+node ace generate:key
+Copie a chave gerada e cole no campo APP_KEY no arquivo .env.
+
+Execute as migrações:
+
+Bash
+
+node ace migration:run
+Inicie o servidor de desenvolvimento:
+
+Bash
+
+npm run dev
+🧪 Scripts Disponíveis
+Comando	Descrição
+npm run dev	Inicia o servidor com Hot Reload
+npm run build	Compila o projeto TypeScript → JavaScript
+npm start	Inicia o servidor em modo produção
+
+Exportar para as Planilhas
+🏗️ Estrutura do Projeto
+├── app/
+│   ├── controllers/
+│   ├── models/
+│   ├── middleware/
+│   ├── validators/
+│   └── service/
+├── config/
+├── database/
+│   ├── migrations/
+│   └── seeders/
+├── public/
+├── start/
+│   ├── kernel.ts
+│   └── routes.ts
+├── swagger.yaml
+├── tests/
+├── .env.example
+📄 Exemplo de .env
+Snippet de código
+
+# Geral
+PORT=3333
+HOST=0.0.0.0
+NODE_ENV=development
+APP_KEY= # Cole aqui a chave gerada
+LOG_LEVEL=debug
+
+# Banco de Dados
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=seu_usuario_db
+DB_PASSWORD=sua_senha_db
+DB_DATABASE=hidrowatch_db
+
+# Email (SMTP)
+SMTP_HOST=seu_host_smtp
+SMTP_PORT=587
+SMTP_USERNAME=seu_usuario_smtp
+SMTP_PASSWORD=sua_senha_smtp
+
+# Cloudinary
+CLOUDINARY_NAME=seu_cloud_name
+CLOUDINARY_API_KEY=sua_api_key
+CLOUDINARY_API_SECRET=sua_api_secret
+👨‍💻 Autor
+Guilherme Silva Rios 🔗 GitHub: @guilhermeprog3
+
+🌐 Portifolio: guilhermeriosdev.vercel.app
+
+
+### `swagger.yaml` Atualizado
+
+A documentação da API no `swagger.yaml` foi significativamente melhorada para corresponder à implementação atual:
+- **Consistência:** Todas as referências a `Object` foram alteradas para `Device` para alinhar com o código.
+- **Correções:** Corrigido o erro de digitação de `tittle` para `title` no esquema do dispositivo.
+- **Precisão dos Esquemas:** Os esquemas (`schemas`) foram atualizados para refletir com precisão os models da aplicação, como a remoção do campo `averageMeasurement` do schema `Measurement`.
+- **Endpoints Adicionados:** Foi adicionado o endpoint `PATCH /device/{device_id}/measurements/{id}` que estava implementado no controller, mas não documentado.
+
+```yaml
 openapi: 3.0.1
 info:
   title: Hidro-watch API
@@ -52,13 +230,13 @@ components:
           type: string
           format: date-time
 
-    Object:
+    Device:
       type: object
       properties:
         id:
           type: integer
           example: 1
-        tittle:
+        title:
           type: string
           example: "Caixa d'água Cozinha"
         location:
@@ -105,11 +283,7 @@ components:
           type: number
           format: float
           example: 300
-        averageMeasurement:
-          type: number
-          format: float
-          example: 102.43
-        objectId:
+        deviceId:
           type: integer
           example: 1
 
@@ -139,11 +313,11 @@ components:
           format: password
           minLength: 6
     
-    CreateObjectInput:
+    CreateDeviceInput:
       type: object
-      required: [tittle, location]
+      required: [title, location]
       properties:
-        tittle:
+        title:
           type: string
         location:
           type: string
@@ -151,6 +325,18 @@ components:
     CreateMeasurementInput:
       type: object
       required: [ph, turbidity, temperature, tds]
+      properties:
+        ph:
+          type: number
+        turbidity:
+          type: number
+        temperature:
+          type: number
+        tds:
+          type: number
+          
+    UpdateMeasurementInput:
+      type: object
       properties:
         ph:
           type: number
@@ -329,7 +515,7 @@ paths:
     get:
       tags: [Usuário]
       summary: Obter detalhes de um usuário
-      description: Retorna os dados de um usuário específico, incluindo seus objetos.
+      description: Retorna os dados de um usuário específico, incluindo seus dispositivos.
       parameters:
         - name: id
           in: path
@@ -421,39 +607,39 @@ paths:
         '200':
           description: Token atualizado com sucesso.
 
-  /object:
+  /device:
     get:
-      tags: [Objetos]
-      summary: Listar objetos do usuário
-      description: Retorna uma lista de todos os objetos (dispositivos) pertencentes ao usuário autenticado.
+      tags: [Dispositivos]
+      summary: Listar dispositivos do usuário
+      description: Retorna uma lista de todos os dispositivos pertencentes ao usuário autenticado.
       responses:
         '200':
-          description: Lista de objetos.
+          description: Lista de dispositivos.
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Object'
+                  $ref: '#/components/schemas/Device'
     post:
-      tags: [Objetos]
-      summary: Criar novo objeto
-      description: Cria um novo objeto (dispositivo) para o usuário autenticado.
+      tags: [Dispositivos]
+      summary: Criar novo dispositivo
+      description: Cria um novo dispositivo para o usuário autenticado.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateObjectInput'
+              $ref: '#/components/schemas/CreateDeviceInput'
       responses:
         '201':
-          description: Objeto criado com sucesso.
+          description: Dispositivo criado com sucesso.
 
-  /object/{id}:
+  /device/{id}:
     get:
-      tags: [Objetos]
-      summary: Obter detalhes de um objeto
-      description: Retorna os dados de um objeto específico.
+      tags: [Dispositivos]
+      summary: Obter detalhes de um dispositivo
+      description: Retorna os dados de um dispositivo específico.
       parameters:
         - name: id
           in: path
@@ -464,11 +650,11 @@ paths:
         '200':
           description: Sucesso.
         '404':
-          description: Objeto não encontrado.
+          description: Dispositivo não encontrado.
     patch:
-      tags: [Objetos]
-      summary: Atualizar um objeto
-      description: Atualiza o título e/ou a localização de um objeto.
+      tags: [Dispositivos]
+      summary: Atualizar um dispositivo
+      description: Atualiza o título e/ou a localização de um dispositivo.
       parameters:
         - name: id
           in: path
@@ -481,15 +667,15 @@ paths:
             schema:
               type: object
               properties:
-                tittle: { type: string }
+                title: { type: string }
                 location: { type: string }
       responses:
         '200':
-          description: Objeto atualizado.
+          description: Dispositivo atualizado.
     delete:
-      tags: [Objetos]
-      summary: Deletar um objeto
-      description: Remove um objeto e todas as suas medições associadas.
+      tags: [Dispositivos]
+      summary: Deletar um dispositivo
+      description: Remove um dispositivo e todas as suas medições associadas.
       parameters:
         - name: id
           in: path
@@ -498,13 +684,13 @@ paths:
             type: integer
       responses:
         '203':
-          description: Objeto deletado.
+          description: Dispositivo deletado.
 
-  /object/{id}/edit:
+  /device/{id}/edit:
     patch:
-      tags: [Objetos]
-      summary: Favoritar/desfavoritar objeto
-      description: Alterna o status de 'favorito' de um objeto.
+      tags: [Dispositivos]
+      summary: Favoritar/desfavoritar dispositivo
+      description: Alterna o status de 'favorito' de um dispositivo.
       parameters:
         - name: id
           in: path
@@ -515,11 +701,11 @@ paths:
         '200':
           description: Status de favorito alterado.
   
-  /object/{id}/toggle-connected:
+  /device/{id}/toggle-connected:
     patch:
-      tags: [Objetos]
+      tags: [Dispositivos]
       summary: Alternar status de conexão
-      description: Alterna o status de 'conectado' de um objeto.
+      description: Alterna o status de 'conectado' de um dispositivo.
       parameters:
         - name: id
           in: path
@@ -530,13 +716,13 @@ paths:
         '200':
           description: Status de conexão alterado.
 
-  /object/{object_id}/measurements:
+  /device/{device_id}/measurements:
     get:
       tags: [Medições]
-      summary: Listar medições de um objeto
-      description: Retorna todas as medições de um objeto específico.
+      summary: Listar medições de um dispositivo
+      description: Retorna todas as medições de um dispositivo específico.
       parameters:
-        - name: object_id
+        - name: device_id
           in: path
           required: true
           schema:
@@ -547,9 +733,9 @@ paths:
     post:
       tags: [Medições]
       summary: Registrar nova medição
-      description: Adiciona uma nova medição a um objeto. Dispara notificações se a qualidade da água estiver fora dos padrões.
+      description: Adiciona uma nova medição a um dispositivo. Dispara notificações se a qualidade da água estiver fora dos padrões.
       parameters:
-        - name: object_id
+        - name: device_id
           in: path
           required: true
           schema:
@@ -564,13 +750,13 @@ paths:
         '201':
           description: Medição criada.
 
-  /object/{object_id}/measurements/{id}:
+  /device/{device_id}/measurements/{id}:
     get:
       tags: [Medições]
       summary: Obter uma medição específica
-      description: Retorna os detalhes de uma medição específica de um objeto.
+      description: Retorna os detalhes de uma medição específica de um dispositivo.
       parameters:
-        - name: object_id
+        - name: device_id
           in: path
           required: true
           schema:
@@ -585,12 +771,37 @@ paths:
           description: Sucesso.
         '404':
           description: Medição não encontrada.
+    patch:
+      tags: [Medições]
+      summary: Atualizar uma medição
+      description: Atualiza os valores de uma medição específica.
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMeasurementInput'
+      responses:
+        '200':
+          description: Medição atualizada.
+        '400':
+          description: Erro na atualização.
     delete:
       tags: [Medições]
       summary: Deletar uma medição
       description: Remove uma medição específica.
       parameters:
-        - name: object_id
+        - name: device_id
           in: path
           required: true
           schema:
@@ -604,13 +815,13 @@ paths:
         '203':
           description: Medição deletada.
 
-  /object/{object_id}/weekly-average:
+  /device/{device_id}/weekly-average:
     get:
       tags: [Medições]
       summary: Média semanal de medições
       description: Retorna a média de medições para cada dia dos últimos 7 dias.
       parameters:
-        - name: object_id
+        - name: device_id
           in: path
           required: true
           schema:
@@ -619,13 +830,13 @@ paths:
         '200':
           description: Sucesso.
 
-  /object/{object_id}/measurements-latest:
+  /device/{device_id}/measurements-latest:
     get:
       tags: [Medições]
       summary: Obter a última medição
-      description: Retorna a medição mais recente de um objeto.
+      description: Retorna a medição mais recente de um dispositivo.
       parameters:
-        - name: object_id
+        - name: device_id
           in: path
           required: true
           schema:
