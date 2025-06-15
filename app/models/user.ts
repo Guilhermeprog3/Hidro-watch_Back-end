@@ -43,7 +43,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public reset_expires_at?: DateTime
 
   @hasMany(() => Device)
-  declare devices: HasMany<typeof Device>
+  declare device: HasMany<typeof Device>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -27,13 +27,13 @@ export default class Measurement extends BaseModel {
   @column({ serializeAs: 'averageMeasurement' })
   declare average_measurement: number
 
-  @column({ columnName: 'object_id' })
-  declare objectId: number
+  @column({ columnName: 'device_id' })
+  declare deviceId: number
 
   @belongsTo(() => DeviceModel, {
-    foreignKey: 'objectId',
+    foreignKey: 'deviceId',
   })
-  declare object: BelongsTo<typeof Device>
+  declare device: BelongsTo<typeof Device>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

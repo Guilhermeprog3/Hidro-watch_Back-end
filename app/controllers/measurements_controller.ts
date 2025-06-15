@@ -11,9 +11,9 @@ export default class MeasurementsController {
 
   async index({ params, response }: HttpContext) {
     try {
-      const object = await Device.findOrFail(params.object_id)
-      await object.preload('measurements')
-      return object.measurements
+      const device = await Device.findOrFail(params.device_id)
+      await device.preload('measurements')
+      return device.measurements
     } catch (error) {
       return response.status(404).json({
         error: 'Device not found or no associated measurements.',
@@ -24,16 +24,16 @@ export default class MeasurementsController {
   async store({ request, params, response }: HttpContext) {
   try {
     const payload = await request.validateUsing(createMeasurementValidator)
-    const object = await Device.findOrFail(params.object_id)
+    const device = await Device.findOrFail(params.device_id)
     
-    const measurement = await object.related('measurements').create({
+    const measurement = await device.related('measurements').create({
       ...payload,
       timestamp: DateTime.local(),
       average_measurement: (payload.ph + payload.turbidity + payload.tds) / 3,
     })
 
     await this.checkWaterQuality(
-      object.userId,
+      device.userId,
       payload.ph,
       payload.turbidity,
       payload.temperature,
@@ -52,16 +52,16 @@ export default class MeasurementsController {
 
   async show({ params, response }: HttpContext) {
     try {
-      const object = await Device.findOrFail(params.object_id);
+      const device = await Device.findOrFail(params.device_id);
 
       const measurement = await Measurement.query()
         .where('id', params.id)
-        .andWhere('object_id', object.id)
+        .andWhere('device_id', device.id)
         .firstOrFail();
       return response.status(200).json(measurement);
     } catch (error) {
       return response.status(404).json({
-        error: 'Measurement not found or does not belong to the specified object.',
+        error: 'Measurement not found or does not belong to the specified device.',
       });
     }
   }
@@ -74,8 +74,8 @@ export default class MeasurementsController {
       measurement.merge({ ph, turbidity, temperature, tds })
       await measurement.save()
 
-      const object = await Device.findOrFail(measurement.objectId)
-      await this.checkWaterQuality(object.userId, ph, turbidity, temperature, tds)
+      const device = await Device.findOrFail(measurement.deviceId)
+      await this.checkWaterQuality(device.userId, ph, turbidity, temperature, tds)
 
       return response.status(200).json(measurement)
     } catch (error) {
@@ -98,15 +98,14 @@ export default class MeasurementsController {
 
   async weeklyAverage({ params, response }: HttpContext) {
     try {
-      const object = await Device.findOrFail(params.object_id)
+      const device = await Device.findOrFail(params.device_id)
       const today = DateTime.local()
       const startDate = today.minus({ days: 6 }).startOf('day')
 
       const measurements = await Measurement.query()
-        .where('object_id', object.id)
+        .where('device_id', device.id)
         .where('timestamp', '>=', startDate.toISO())
 
-      // Agrupa as medições por dia para calcular a soma e a contagem
       const dailySums = new Map<string, {
         ph: number
         turbidity: number
@@ -131,7 +130,6 @@ export default class MeasurementsController {
         }
       })
 
-      // Gera a resposta final com as médias dos últimos 7 dias
       const weeklyAverages = Array.from({ length: 7 }, (_, i) => {
         const date = startDate.plus({ days: i })
         const dateKey = date.toISODate()
@@ -156,15 +154,15 @@ export default class MeasurementsController {
 
   async getLatestMeasurement({ params, response }: HttpContext) {
     try {
-      const object = await Device.findOrFail(params.object_id);
+      const device = await Device.findOrFail(params.device_id);
   
       const latestMeasurement = await Measurement.query()
-        .where('object_id', object.id)
+        .where('device_id', device.id)
         .orderBy('timestamp', 'desc')
         .first();
       if (!latestMeasurement) {
         return response.status(404).json({
-          error: 'No measurements found for this object.',
+          error: 'No measurements found for this device.',
         });
       }
       return response.status(200).json(latestMeasurement);

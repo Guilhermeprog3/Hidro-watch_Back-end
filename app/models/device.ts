@@ -1,4 +1,3 @@
-// app/models/device.ts
 import { DateTime } from 'luxon'
 import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import User from './user.js'
@@ -14,7 +13,7 @@ export default class Device extends BaseModel {
   declare id: number
 
   @column()
-  declare tittle: string
+  declare title: string
 
   @column()
   declare location: string
@@ -32,7 +31,7 @@ export default class Device extends BaseModel {
   declare user: BelongsTo<typeof User>
 
   @hasMany(() => MeasurementModel, {
-    foreignKey: 'objectId',
+    foreignKey: 'deviceId',
   })
   declare measurements: HasMany<typeof Measurement>
 

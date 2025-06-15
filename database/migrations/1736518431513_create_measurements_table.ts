@@ -13,11 +13,11 @@ export default class extends BaseSchema {
       table.decimal('tds').notNullable()
       table.decimal('average_measurement').notNullable()
       table
-        .integer('object_id')
+        .integer('device_id')
         .notNullable()
         .unsigned()
         .references('id')
-        .inTable('objects')
+        .inTable('device')
         .onUpdate('CASCADE')
         .onDelete('CASCADE')
       table.timestamp('created_at')

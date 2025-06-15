@@ -1,15 +1,15 @@
 import vine from '@vinejs/vine'
 
-export const createObjectValidator = vine.compile(
+export const createDeviceValidator = vine.compile(
   vine.object({
-    tittle: vine.string().trim(),
+    title: vine.string().trim(),
     location: vine.string().trim(),
   })
 )
 
-export const updateObjetcValidator = vine.compile(
+export const updateDeviceValidator = vine.compile(
   vine.object({
-    tittle: vine.string().trim().optional(),
+    title: vine.string().trim().optional(),
     location: vine.string().trim().optional(),
     favorite: vine.boolean().optional(),
   })
