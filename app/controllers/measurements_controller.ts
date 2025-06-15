@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Measurement from '#models/measurement'
-import Object from '#models/object'
+import Object from '#models/device'
 import { createMeasurementValidator, updateMeasurementValidator } from '#validators/measurement'
 import { DateTime } from 'luxon'
 import ExpoNotificationService from '../service/ExpoNotificationService.js'

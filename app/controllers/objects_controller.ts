@@ -1,4 +1,4 @@
-import Object from '#models/object'
+import Object from '#models/device'
 import { createObjectValidator } from '#validators/object'
 import type { HttpContext } from '@adonisjs/core/http'
 import { updateObjetcValidator } from '#validators/object'

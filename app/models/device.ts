@@ -1,11 +1,15 @@
+// app/models/device.ts
 import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import User from './user.js'
-import { type BelongsTo } from '@adonisjs/lucid/types/relations'
-import { type HasMany } from '@adonisjs/lucid/types/relations'
-import Measurement from './measurement.js'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import type Measurement from './measurement.js' 
 
-export default class Objects extends BaseModel {
+let MeasurementModel: typeof import('./measurement.js').default
+
+export default class Device extends BaseModel {
+  public static table = 'objects'
+
   @column({ isPrimary: true })
   declare id: number
 
@@ -27,7 +31,7 @@ export default class Objects extends BaseModel {
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
 
-  @hasMany(() => Measurement, {
+  @hasMany(() => MeasurementModel, {
     foreignKey: 'objectId',
   })
   declare measurements: HasMany<typeof Measurement>
@@ -38,3 +42,7 @@ export default class Objects extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 }
+
+import('./measurement.js').then((m) => {
+  MeasurementModel = m.default
+})
