@@ -12,7 +12,7 @@ import fs from 'fs/promises'
 
 export default class UsersController {
   async index() {
-    const users = await User.query().preload('objects')
+    const users = await User.query().preload('devices')
     return users
   }
   async initEmailVerification({ request, response }: HttpContext) {

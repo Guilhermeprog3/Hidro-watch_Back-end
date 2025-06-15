@@ -1,6 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Measurement from '#models/measurement'
-import Object from '#models/device'
+import Device from '#models/device'
 import { createMeasurementValidator, updateMeasurementValidator } from '#validators/measurement'
 import { DateTime } from 'luxon'
 import ExpoNotificationService from '../service/ExpoNotificationService.js'
@@ -11,12 +11,12 @@ export default class MeasurementsController {
 
   async index({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail(params.object_id)
+      const object = await Device.findOrFail(params.object_id)
       await object.preload('measurements')
       return object.measurements
     } catch (error) {
       return response.status(404).json({
-        error: 'Object not found or no associated measurements.',
+        error: 'Device not found or no associated measurements.',
       })
     }
   }
@@ -24,7 +24,7 @@ export default class MeasurementsController {
   async store({ request, params, response }: HttpContext) {
   try {
     const payload = await request.validateUsing(createMeasurementValidator)
-    const object = await Object.findOrFail(params.object_id)
+    const object = await Device.findOrFail(params.object_id)
     
     const measurement = await object.related('measurements').create({
       ...payload,
@@ -52,7 +52,7 @@ export default class MeasurementsController {
 
   async show({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail(params.object_id);
+      const object = await Device.findOrFail(params.object_id);
 
       const measurement = await Measurement.query()
         .where('id', params.id)
@@ -74,12 +74,12 @@ export default class MeasurementsController {
       measurement.merge({ ph, turbidity, temperature, tds })
       await measurement.save()
 
-      const object = await Object.findOrFail(measurement.objectId)
+      const object = await Device.findOrFail(measurement.objectId)
       await this.checkWaterQuality(object.userId, ph, turbidity, temperature, tds)
 
       return response.status(200).json(measurement)
     } catch (error) {
-      response.status(400).json({ error: 'Object not found' })
+      response.status(400).json({ error: 'Device not found' })
     }
   }
 
@@ -98,7 +98,7 @@ export default class MeasurementsController {
 
   async weeklyAverage({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail(params.object_id)
+      const object = await Device.findOrFail(params.object_id)
       const today = DateTime.local()
       const startDate = today.minus({ days: 6 }).startOf('day')
 
@@ -156,7 +156,7 @@ export default class MeasurementsController {
 
   async getLatestMeasurement({ params, response }: HttpContext) {
     try {
-      const object = await Object.findOrFail(params.object_id);
+      const object = await Device.findOrFail(params.object_id);
   
       const latestMeasurement = await Measurement.query()
         .where('object_id', object.id)

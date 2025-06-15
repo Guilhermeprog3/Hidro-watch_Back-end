@@ -5,7 +5,7 @@ import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { type HasMany } from '@adonisjs/lucid/types/relations'
-import Object from './device.js'
+import Device from './device.js'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -42,8 +42,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column.dateTime()
   public reset_expires_at?: DateTime
 
-  @hasMany(() => Object)
-  declare objects: HasMany<typeof Object>
+  @hasMany(() => Device)
+  declare devices: HasMany<typeof Device>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
