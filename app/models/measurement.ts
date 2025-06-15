@@ -24,9 +24,6 @@ export default class Measurement extends BaseModel {
   @column()
   declare tds: number
 
-  @column({ serializeAs: 'averageMeasurement' })
-  declare average_measurement: number
-
   @column({ columnName: 'device_id' })
   declare deviceId: number
 

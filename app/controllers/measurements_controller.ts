@@ -29,7 +29,6 @@ export default class MeasurementsController {
     const measurement = await device.related('measurements').create({
       ...payload,
       timestamp: DateTime.local(),
-      average_measurement: (payload.ph + payload.turbidity + payload.tds) / 3,
     })
 
     await this.checkWaterQuality(
