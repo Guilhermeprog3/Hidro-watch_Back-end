@@ -8,7 +8,7 @@ import type Measurement from './measurement.js'
 let MeasurementModel: typeof import('./measurement.js').default
 
 export default class Device extends BaseModel {
-  public static table = 'objects'
+  public static table = 'device'
 
   @column({ isPrimary: true })
   declare id: number

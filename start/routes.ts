@@ -5,7 +5,7 @@ import yaml from 'js-yaml'
 import { middleware } from './kernel.js'
 
 const UsersController = () => import('#controllers/users_controller')
-const ObjectsController = () => import('#controllers/objects_controller')
+const DevicesController = () => import('#controllers/device_controller')
 const SessionControler = () => import('#controllers/session_controller')
 const MeasurementsController = () => import('#controllers/measurements_controller')
 
@@ -30,16 +30,17 @@ router.patch('user/:id/picture', [UsersController, 'uploadProfilePicture'])
 router.group(() => {
   router.patch('users/update-token', [UsersController, 'updateNotificationToken'])
 
-  router.resource('object', ObjectsController).apiOnly()
-  router.resource('object.measurements', MeasurementsController).apiOnly()
+  router.resource('device', DevicesController).apiOnly()
+  router.resource('device.measurements', MeasurementsController).apiOnly()
   
-  router.get('object/:object_id/weekly-average', [MeasurementsController, 'weeklyAverage'])
-  router.get('object/:object_id/measurements-latest', [MeasurementsController, 'getLatestMeasurement'])
+  router.get('device/:device_id/weekly-average', [MeasurementsController, 'weeklyAverage'])
+  router.get('device/:device_id/measurements-latest', [MeasurementsController, 'getLatestMeasurement'])
   
-  router.patch('object/:id/edit', [ObjectsController, 'edit'])
-  router.patch('object/:id/toggle-connected', [ObjectsController, 'toggleConnected'])
+  router.patch('device/:id/edit', [DevicesController, 'edit'])
+  router.patch('device/:id/toggle-connected', [DevicesController, 'toggleConnected'])
 })
 .use(middleware.auth())
+
 
 const SWAGGER_PATH = swaggerUi.getAbsoluteFSPath()
 
