@@ -115,20 +115,22 @@ export default class MeasurementsController {
       }>()
 
       measurements.forEach((measurement) => {
-        const dateKey = measurement.timestamp.toISODate()
-        if (dateKey) {
-          let dayData = dailySums.get(dateKey)
-          if (!dayData) {
-            dayData = { ph: 0, turbidity: 0, temperature: 0, tds: 0, count: 0 }
-            dailySums.set(dateKey, dayData)
-          }
-          dayData.ph += measurement.ph
-          dayData.turbidity += measurement.turbidity
-          dayData.temperature += measurement.temperature
-          dayData.tds += measurement.tds
-          dayData.count++
-        }
-      })
+    const dateKey = measurement.timestamp.toISODate()
+    if (dateKey) {
+      let dayData = dailySums.get(dateKey)
+      if (!dayData) {
+        dayData = { ph: 0, turbidity: 0, temperature: 0, tds: 0, count: 0 }
+        dailySums.set(dateKey, dayData)
+      }
+      // CORREÇÃO: Garante que os valores sejam somados como números
+      dayData.ph += Number(measurement.ph)
+      dayData.turbidity += Number(measurement.turbidity)
+      dayData.temperature += Number(measurement.temperature)
+      dayData.tds += Number(measurement.tds)
+      dayData.count++
+    }
+  })
+
 
       const weeklyAverages = Array.from({ length: 7 }, (_, i) => {
         const date = startDate.plus({ days: i })
