@@ -1,10 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Measurement from '#models/measurement'
 import Device from '#models/device'
+import User from '#models/user'
 import { createMeasurementValidator, updateMeasurementValidator } from '#validators/measurement'
 import { DateTime } from 'luxon'
 import ExpoNotificationService from '../service/ExpoNotificationService.js'
-import User from '#models/user'
 
 export default class MeasurementsController {
   private notificationService = new ExpoNotificationService()
@@ -22,63 +22,73 @@ export default class MeasurementsController {
   }
 
   async store({ request, params, response }: HttpContext) {
-  try {
-    const payload = await request.validateUsing(createMeasurementValidator)
-    const device = await Device.findOrFail(params.device_id)
-    
-    const measurement = await device.related('measurements').create({
-      ...payload,
-      timestamp: DateTime.local(),
-    })
+    try {
+      const payload = await request.validateUsing(createMeasurementValidator)
+      const device = await Device.query().where('id', params.device_id).preload('users').firstOrFail()
 
-    await this.checkWaterQuality(
-      device.userId,
-      payload.ph,
-      payload.turbidity,
-      payload.temperature,
-      payload.tds
-    )
+      const measurement = await device.related('measurements').create({
+        ...payload,
+        timestamp: DateTime.local(),
+      })
 
-    return response.status(201).json(measurement)
-  } catch (error) {
-    console.error(error)
-    return response.status(400).json({ 
-      error: 'Erro ao criar medição',
-      details: error.messages?.errors || error.message
-    })
+      for (const user of device.users) {
+        await this.checkWaterQuality(
+          user,
+          payload.ph,
+          payload.turbidity,
+          payload.temperature,
+          payload.tds
+        )
+      }
+
+      const owner = await User.findOrFail(device.userId)
+      if (!device.users.some((u) => u.id === owner.id)) {
+        await this.checkWaterQuality(
+          owner,
+          payload.ph,
+          payload.turbidity,
+          payload.temperature,
+          payload.tds
+        )
+      }
+
+      return response.status(201).json(measurement)
+    } catch (error) {
+      console.error(error)
+      return response.status(400).json({
+        error: 'Erro ao criar medição',
+        details: error.messages?.errors || error.message,
+      })
+    }
   }
-}
 
   async show({ params, response }: HttpContext) {
     try {
-      const device = await Device.findOrFail(params.device_id);
+      const device = await Device.findOrFail(params.device_id)
 
       const measurement = await Measurement.query()
         .where('id', params.id)
         .andWhere('device_id', device.id)
-        .firstOrFail();
-      return response.status(200).json(measurement);
+        .firstOrFail()
+      return response.status(200).json(measurement)
     } catch (error) {
       return response.status(404).json({
         error: 'Measurement not found or does not belong to the specified device.',
-      });
+      })
     }
   }
 
   async update({ request, params, response }: HttpContext) {
     try {
       const measurement = await Measurement.findByOrFail('id', params.id)
-      const { ph, turbidity, temperature, tds } = await request.validateUsing(updateMeasurementValidator)
+      const payload = await request.validateUsing(updateMeasurementValidator)
 
-      measurement.merge({ ph, turbidity, temperature, tds })
+      measurement.merge(payload)
       await measurement.save()
-
-      const device = await Device.findOrFail(measurement.deviceId)
-      await this.checkWaterQuality(device.userId, ph, turbidity, temperature, tds)
 
       return response.status(200).json(measurement)
     } catch (error) {
-      response.status(400).json({ error: 'Device not found' })
+      response.status(400).json({ error: 'Measurement not found' })
     }
   }
 
@@ -86,7 +96,6 @@ export default class MeasurementsController {
     try {
       const measurement = await Measurement.findByOrFail('id', params.id)
       await measurement.delete()
-
       return response.status(203)
     } catch (error) {
       return response.status(404).json({
@@ -94,6 +103,7 @@ export default class MeasurementsController {
       })
     }
   }
+
 
   async weeklyAverage({ params, response }: HttpContext) {
     try {
@@ -174,72 +184,56 @@ export default class MeasurementsController {
     }
   }
 
-  async checkWaterQuality(
-  userId: number,
-  ph?: number | undefined,
-  turbidity?: number | undefined,
-  temperature?: number | undefined,
-  tds?: number | undefined
-) {
-  if (ph === undefined || turbidity === undefined || 
-      temperature === undefined || tds === undefined) {
-    console.warn('Parâmetros de qualidade da água incompletos', { ph, turbidity, temperature, tds });
-    return;
-  }
+ async checkWaterQuality(
+    user: User,
+    ph?: number | undefined,
+    turbidity?: number | undefined,
+    temperature?: number | undefined,
+    tds?: number | undefined
+  ) {
+    if (
+      ph === undefined ||
+      turbidity === undefined ||
+      temperature === undefined ||
+      tds === undefined
+    ) {
+      console.warn('Parâmetros de qualidade da água incompletos')
+      return
+    }
 
-  const STANDARDS = {
-    PH: { min: 6.5, max: 8.5 },
-    TURBIDITY: { max: 5.0 },
-    TEMPERATURE: { min: 10, max: 30 },
-    TDS: { max: 500 }
-  };
+    const STANDARDS = {
+      PH: { min: 6.5, max: 8.5 },
+      TURBIDITY: { max: 5.0 },
+      TEMPERATURE: { min: 10, max: 30 },
+      TDS: { max: 500 },
+    }
 
-  const alerts = [
-    ph < STANDARDS.PH.min && `pH baixo (${ph.toFixed(1)} < ${STANDARDS.PH.min})`,
-    ph > STANDARDS.PH.max && `pH alto (${ph.toFixed(1)} > ${STANDARDS.PH.max})`,
-    turbidity > STANDARDS.TURBIDITY.max && `Turbidez alta (${turbidity.toFixed(1)} > ${STANDARDS.TURBIDITY.max})`,
-    temperature < STANDARDS.TEMPERATURE.min && `Temperatura baixa (${temperature.toFixed(1)}°C < ${STANDARDS.TEMPERATURE.min}°C)`,
-    temperature > STANDARDS.TEMPERATURE.max && `Temperatura alta (${temperature.toFixed(1)}°C > ${STANDARDS.TEMPERATURE.max}°C)`,
-    tds > STANDARDS.TDS.max && `TDS alto (${tds.toFixed(1)} > ${STANDARDS.TDS.max})`
-  ].filter(Boolean);
+    const alerts = [
+      ph < STANDARDS.PH.min && `pH baixo (${ph.toFixed(1)} < ${STANDARDS.PH.min})`,
+      ph > STANDARDS.PH.max && `pH alto (${ph.toFixed(1)} > ${STANDARDS.PH.max})`,
+      turbidity > STANDARDS.TURBIDITY.max &&
+        `Turbidez alta (${turbidity.toFixed(1)} > ${STANDARDS.TURBIDITY.max})`,
+      temperature < STANDARDS.TEMPERATURE.min &&
+        `Temperatura baixa (${temperature.toFixed(1)}°C < ${STANDARDS.TEMPERATURE.min}°C)`,
+      temperature > STANDARDS.TEMPERATURE.max &&
+        `Temperatura alta (${temperature.toFixed(1)}°C > ${STANDARDS.TEMPERATURE.max}°C)`,
+      tds > STANDARDS.TDS.max && `TDS alto (${tds.toFixed(1)} > ${STANDARDS.TDS.max})`,
+    ].filter(Boolean)
 
-  if (alerts.length > 0) {
-    const title = '⚠️ Alerta de Qualidade da Água';
-    const message = alerts.join('\n• ');
-    const data = {
-      type: 'water_alert',
-      values: { ph, turbidity, temperature, tds }
-    };
+    if (alerts.length > 0 && user.notificationToken) {
+      const title = '⚠️ Alerta de Qualidade da Água'
+      const message = alerts.join('\n• ')
+      const data = {
+        type: 'water_alert',
+        values: { ph, turbidity, temperature, tds },
+      }
 
-    try {
-      await this.notificationService.sendToUser(
-        userId,
-        title,
-        message,
-        data
-      );
-      
-      console.log(`Notificação enviada para usuário ${userId}`);
-    } catch (error) {
-      console.error(`Falha ao enviar notificação para usuário ${userId}:`, error);
-      
-      if (error.message.includes('DeviceNotRegistered')) {
-        try {
-          const user = await User.findOrFail(userId);
-          if (user.notificationToken) {
-            console.warn(`Tentando fallback com token direto para usuário ${userId}`);
-            await this.notificationService.sendToToken(
-              user.notificationToken,
-              title,
-              message,
-              data
-            );
-          }
-        } catch (fallbackError) {
-          console.error(`Falha no fallback para usuário ${userId}:`, fallbackError);
-        }
+      try {
+        await this.notificationService.sendToToken(user.notificationToken, title, message, data)
+        console.log(`Notificação enviada para usuário ${user.id}`)
+      } catch (error) {
+        console.error(`Falha ao enviar notificação para usuário ${user.id}:`, error)
       }
     }
   }
-}
 }

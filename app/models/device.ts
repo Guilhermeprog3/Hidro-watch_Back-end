@@ -1,8 +1,8 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, hasMany, manyToMany } from '@adonisjs/lucid/orm'
 import User from './user.js'
-import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
-import type Measurement from './measurement.js' 
+import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
+import type Measurement from './measurement.js'
 
 let MeasurementModel: typeof import('./measurement.js').default
 
@@ -29,6 +29,11 @@ export default class Device extends BaseModel {
 
   @belongsTo(() => User)
   declare user: BelongsTo<typeof User>
+
+  @manyToMany(() => User, {
+    pivotTable: 'user_devices',
+  })
+  declare users: ManyToMany<typeof User>
 
   @hasMany(() => MeasurementModel, {
     foreignKey: 'deviceId',

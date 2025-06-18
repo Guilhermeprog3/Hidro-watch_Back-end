@@ -78,4 +78,33 @@ export default class DeviceController {
       return response.status(404).json({ error: 'Device not found' })
     }
   }
+  async associateUser({ auth, params, response }: HttpContext) {
+    try {
+      const user = auth.user!
+      const device = await Device.findOrFail(params.id)
+
+      const isAlreadyAssociated = await device
+        .related('users')
+        .query()
+        .where('user_id', user.id)
+        .first()
+
+      if (isAlreadyAssociated) {
+        return response
+          .status(409)
+          .json({ message: 'Você já está conectado a este dispositivo.' })
+      }
+
+      await device.related('users').attach([user.id])
+
+      return response.ok({ message: 'Você foi conectado ao dispositivo com sucesso!' })
+    } catch (error) {
+      if (error.code === 'E_ROW_NOT_FOUND') {
+        return response.status(404).json({ message: 'Dispositivo não encontrado.' })
+      }
+
+      console.error('Falha ao associar dispositivo:', error)
+      return response.internalServerError({ message: 'Ocorreu um erro ao conectar ao dispositivo.' })
+    }
+  }
 }

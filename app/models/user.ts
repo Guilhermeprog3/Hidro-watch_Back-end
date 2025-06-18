@@ -1,10 +1,10 @@
 import { DateTime } from 'luxon'
 import hash from '@adonisjs/core/services/hash'
 import { compose } from '@adonisjs/core/helpers'
-import { BaseModel, column, hasMany } from '@adonisjs/lucid/orm'
+import { BaseModel, column, hasMany, manyToMany } from '@adonisjs/lucid/orm'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
-import { type HasMany } from '@adonisjs/lucid/types/relations'
+import type { HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Device from './device.js'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
@@ -34,8 +34,8 @@ export default class User extends compose(BaseModel, AuthFinder) {
   public reset_code?: string
 
   @column({
-    consume: (value) => value ? value.trim() : null,
-    serialize: (value) => value ? value.trim() : null
+    consume: (value) => (value ? value.trim() : null),
+    serialize: (value) => (value ? value.trim() : null),
   })
   declare profile_picture: string | null
 
@@ -44,6 +44,11 @@ export default class User extends compose(BaseModel, AuthFinder) {
 
   @hasMany(() => Device)
   declare device: HasMany<typeof Device>
+
+  @manyToMany(() => Device, {
+    pivotTable: 'user_devices',
+  })
+  declare devices: ManyToMany<typeof Device>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -57,7 +62,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
     return {
       ...this.serializeAttributes(),
       ...this.serializeComputed(),
-      profile_picture: this.profile_picture?.trim() || null
+      profile_picture: this.profile_picture?.trim() || null,
     }
   }
 }

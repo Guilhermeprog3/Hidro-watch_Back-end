@@ -11,35 +11,36 @@ const MeasurementsController = () => import('#controllers/measurements_controlle
 
 router.group(() => {
   router.post('session', [SessionControler, 'store'])
-  router.delete('session', [SessionControler, 'destroy'])
 
   router.post('email/verify-init', [UsersController, 'initEmailVerification'])
   router.post('email/verify-confirm', [UsersController, 'confirmEmailVerification'])
-  
+
   router.post('password/reset-code', [UsersController, 'forgotPassword'])
   router.post('password/validate-code', [UsersController, 'validateResetCode'])
   router.patch('password/reset', [UsersController, 'resetPassword'])
 
   router.post('users', [UsersController, 'store'])
+
+  router.post('device/:device_id/measurements', [MeasurementsController, 'store'])
 })
 
-router.resource('user', UsersController).apiOnly()
-router.patch('user/:id/picture', [UsersController, 'uploadProfilePicture'])
-  .use(middleware.fileUpload())
-
 router.group(() => {
+  router.delete('session', [SessionControler, 'destroy'])
+
+  router.resource('user', UsersController).apiOnly().except(['store'])
+  router.patch('user/:id/picture', [UsersController, 'uploadProfilePicture']).use(middleware.fileUpload())
   router.patch('users/update-token', [UsersController, 'updateNotificationToken'])
 
   router.resource('device', DevicesController).apiOnly()
-  router.resource('device.measurements', MeasurementsController).apiOnly()
-  
-  router.get('device/:device_id/weekly-average', [MeasurementsController, 'weeklyAverage'])
-  router.get('device/:device_id/measurements-latest', [MeasurementsController, 'getLatestMeasurement'])
-  
+  router.post('device/:id/associate', [DevicesController, 'associateUser'])
   router.patch('device/:id/edit', [DevicesController, 'edit'])
   router.patch('device/:id/toggle-connected', [DevicesController, 'toggleConnected'])
-})
-.use(middleware.auth())
+
+  router.resource('device.measurements', MeasurementsController).apiOnly().except(['store'])
+
+  router.get('device/:device_id/weekly-average', [MeasurementsController, 'weeklyAverage'])
+  router.get('device/:device_id/measurements-latest', [MeasurementsController, 'getLatestMeasurement'])
+}).use(middleware.auth())
 
 
 const SWAGGER_PATH = swaggerUi.getAbsoluteFSPath()
