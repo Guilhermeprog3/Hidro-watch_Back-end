@@ -6,10 +6,15 @@ export default class DeviceController {
   
   async index({ auth }: HttpContext) {
     const user = auth.user!
-    await user.load('device', (query) => {
-      query.orderBy('created_at', 'desc')
-    })
-    return user.device
+
+    const devices = await Device.query()
+      .where('user_id', user.id)
+      .orWhereHas('users', (query) => {
+        query.where('user_id', user.id)
+      })
+      .preload('user')
+
+    return devices
   }
 
   async store({ request, auth, response }: HttpContext) {
@@ -105,6 +110,28 @@ export default class DeviceController {
 
       console.error('Falha ao associar dispositivo:', error)
       return response.internalServerError({ message: 'Ocorreu um erro ao conectar ao dispositivo.' })
+    }
+  }
+  async leaveDevice({ auth, params, response }: HttpContext) {
+    try {
+      const user = auth.user!
+      const device = await Device.findOrFail(params.id)
+      if (device.userId === user.id) {
+        return response.status(403).json({
+          message: 'Você é o dono deste dispositivo e não pode se desassociar. Considere apagar ou transferir o dispositivo.',
+        })
+      }
+
+      await device.related('users').detach([user.id])
+
+      return response.ok({ message: 'Você saiu do dispositivo com sucesso!' })
+    } catch (error) {
+      if (error.code === 'E_ROW_NOT_FOUND') {
+        return response.status(404).json({ message: 'Dispositivo não encontrado.' })
+      }
+      console.error('Falha ao sair do dispositivo:', error)
+      return response
+        .internalServerError({ message: 'Ocorreu um erro ao tentar sair do dispositivo.' })
     }
   }
 }

@@ -9,14 +9,32 @@ import ExpoNotificationService from '../service/ExpoNotificationService.js'
 export default class MeasurementsController {
   private notificationService = new ExpoNotificationService()
 
-  async index({ params, response }: HttpContext) {
+  async index({ auth, params, response }: HttpContext) {
     try {
-      const device = await Device.findOrFail(params.device_id)
-      await device.preload('measurements')
+      const user = auth.user!
+      const device = await Device.query()
+        .where('id', params.device_id)
+        .where((query) => {
+          query
+            .where('user_id', user.id)
+            .orWhereHas('users', (userQuery) => {
+              userQuery.where('user_id', user.id)
+            })
+        })
+        .preload('measurements', (measurementQuery) => {
+           measurementQuery.orderBy('created_at', 'desc')
+        })
+        .firstOrFail()
       return device.measurements
+
     } catch (error) {
-      return response.status(404).json({
-        error: 'Device not found or no associated measurements.',
+      if (error.code === 'E_ROW_NOT_FOUND') {
+        return response.status(403).json({
+          error: 'Você não tem permissão para acessar este dispositivo ou ele não existe.',
+        })
+      }
+      return response.status(500).json({
+        error: 'Ocorreu um erro ao buscar as medições do dispositivo.',
       })
     }
   }
@@ -103,11 +121,21 @@ export default class MeasurementsController {
       })
     }
   }
-
-
-  async weeklyAverage({ params, response }: HttpContext) {
+  async weeklyAverage({ auth, params, response }: HttpContext) {
     try {
-      const device = await Device.findOrFail(params.device_id)
+      const user = auth.user!
+
+      const device = await Device.query()
+        .where('id', params.device_id)
+        .where((query) => {
+          query
+            .where('user_id', user.id)
+            .orWhereHas('users', (userQuery) => {
+              userQuery.where('user_id', user.id)
+            })
+        })
+        .firstOrFail()
+
       const today = DateTime.local()
       const startDate = today.minus({ days: 6 }).startOf('day')
 
@@ -124,21 +152,20 @@ export default class MeasurementsController {
       }>()
 
       measurements.forEach((measurement) => {
-    const dateKey = measurement.timestamp.toISODate()
-    if (dateKey) {
-      let dayData = dailySums.get(dateKey)
-      if (!dayData) {
-        dayData = { ph: 0, turbidity: 0, temperature: 0, tds: 0, count: 0 }
-        dailySums.set(dateKey, dayData)
-      }
-      dayData.ph += Number(measurement.ph)
-      dayData.turbidity += Number(measurement.turbidity)
-      dayData.temperature += Number(measurement.temperature)
-      dayData.tds += Number(measurement.tds)
-      dayData.count++
-    }
-  })
-
+        const dateKey = measurement.timestamp.toISODate()
+        if (dateKey) {
+          let dayData = dailySums.get(dateKey)
+          if (!dayData) {
+            dayData = { ph: 0, turbidity: 0, temperature: 0, tds: 0, count: 0 }
+            dailySums.set(dateKey, dayData)
+          }
+          dayData.ph += Number(measurement.ph)
+          dayData.turbidity += Number(measurement.turbidity)
+          dayData.temperature += Number(measurement.temperature)
+          dayData.tds += Number(measurement.tds)
+          dayData.count++
+        }
+      })
 
       const weeklyAverages = Array.from({ length: 7 }, (_, i) => {
         const date = startDate.plus({ days: i })
@@ -157,30 +184,51 @@ export default class MeasurementsController {
 
       return response.status(200).json(weeklyAverages)
     } catch (error) {
+      if (error.code === 'E_ROW_NOT_FOUND') {
+        return response.status(403).json({
+          error: 'Você não tem permissão para acessar este dispositivo ou ele não existe.',
+        })
+      }
       console.error(error)
-      return response.status(500).json({ error: 'An error occurred while fetching weekly averages.' })
+      return response.status(500).json({ error: 'Ocorreu um erro ao buscar a média semanal.' })
     }
   }
-
-  async getLatestMeasurement({ params, response }: HttpContext) {
+  async getLatestMeasurement({ auth, params, response }: HttpContext) {
     try {
-      const device = await Device.findOrFail(params.device_id);
-  
+      const user = auth.user!
+
+      const device = await Device.query()
+        .where('id', params.device_id)
+        .where((query) => {
+          query
+            .where('user_id', user.id)
+            .orWhereHas('users', (userQuery) => {
+              userQuery.where('user_id', user.id)
+            })
+        })
+        .firstOrFail()
       const latestMeasurement = await Measurement.query()
         .where('device_id', device.id)
         .orderBy('timestamp', 'desc')
-        .first();
+        .first()
+
       if (!latestMeasurement) {
         return response.status(404).json({
-          error: 'No measurements found for this device.',
-        });
+          error: 'Nenhuma medição encontrada para este dispositivo.',
+        })
       }
-      return response.status(200).json(latestMeasurement);
+
+      return response.status(200).json(latestMeasurement)
     } catch (error) {
-      console.error(error);
+      if (error.code === 'E_ROW_NOT_FOUND') {
+        return response.status(403).json({
+          error: 'Você não tem permissão para acessar este dispositivo ou ele não existe.',
+        })
+      }
+      console.error(error)
       return response.status(500).json({
-        error: 'An error occurred while fetching the latest measurement.',
-      });
+        error: 'Ocorreu um erro ao buscar a última medição.',
+      })
     }
   }
 

@@ -1,181 +1,3 @@
-A documentação do projeto foi atualizada para refletir as mudanças recentes no código. As principais alterações foram realizadas nos arquivos README.md e swagger.yaml para garantir consistência, precisão e clareza.
-
-README.md Atualizado
-O arquivo README.md foi revisado para padronizar a terminologia, substituindo referências a "Objetos" por "Dispositivos", de acordo com a nomenclatura utilizada no código-fonte, como nos models e controllers.
-
-Markdown
-
-# 💧 Hidro-Watch API
-
-> Backend da aplicação Hidro-Watch, um sistema inteligente de monitoramento de qualidade da água.
-
-## 📖 Sobre o Projeto
-
-Este é o backend da aplicação Hidro-Watch, desenvolvido com **AdonisJS v6**. Ele fornece uma **API RESTful completa** para gerenciar:
-
-- Usuários
-- Dispositivos de monitoramento
-- Medições de qualidade da água
-
-O sistema foi projetado para ser **robusto, seguro e escalável**, com autenticação baseada em token, validação com VineJS, envio de notificações via Expo e upload de imagens com Cloudinary.
-
----
-
-## 📚 Documentação da API
-
-A documentação Swagger dos endpoints está disponível em:
-
-http://127.0.0.1:3333/docs
-
-
-
----
-
-## ✨ Funcionalidades Principais
-
-### 👤 Gerenciamento de Usuários
-- Login/Logout com e-mail e senha
-- Cadastro de novos usuários com validação
-- Verificação de e-mail em duas etapas
-- Recuperação e redefinição de senha
-- Upload de foto de perfil via Cloudinary
-
-### 💧 Gerenciamento de Dispositivos
-- CRUD completo dos dispositivos
-- Favoritar dispositivos
-
-### 📊 Gerenciamento de Medições
-- Registro de medições: **pH, turbidez, temperatura, TDS**
-- Cálculo automático da média semanal
-- Acesso à última medição
-
-### 🔔 Notificações
-- Envio de notificações push via Expo quando parâmetros estão fora dos limites ideais
-
----
-
-## 🛠️ Tecnologias Utilizadas
-
-- **Backend:** AdonisJS v6
-- **Linguagem:** TypeScript
-- **Banco de Dados:** PostgreSQL + Lucid ORM
-- **Autenticação:** Token-based (`@adonisjs/auth`)
-- **Validação:** VineJS
-- **Upload de Arquivos:** Cloudinary
-- **Notificações Push:** Expo SDK
-- **Email:** Adonis Mail (SMTP)
-
----
-
-## 🚀 Começando
-
-### ✅ Pré-requisitos
-
-- Node.js (v20.x)
-- npm, yarn ou pnpm
-- PostgreSQL
-
-### 📥 Instalação
-
-Clone o repositório:
-
-```bash
-git clone [https://github.com/guilhermeprog3/hidro-watch_back-end.git](https://github.com/guilhermeprog3/hidro-watch_back-end.git)
-cd hidro-watch_back-end
-Instale as dependências:
-
-Bash
-
-npm install
-Copie o arquivo .env.example para .env:
-
-Bash
-
-cp .env.example .env
-Gere uma chave da aplicação:
-
-Bash
-
-node ace generate:key
-Copie a chave gerada e cole no campo APP_KEY no arquivo .env.
-
-Execute as migrações:
-
-Bash
-
-node ace migration:run
-Inicie o servidor de desenvolvimento:
-
-Bash
-
-npm run dev
-🧪 Scripts Disponíveis
-Comando	Descrição
-npm run dev	Inicia o servidor com Hot Reload
-npm run build	Compila o projeto TypeScript → JavaScript
-npm start	Inicia o servidor em modo produção
-
-Exportar para as Planilhas
-🏗️ Estrutura do Projeto
-├── app/
-│   ├── controllers/
-│   ├── models/
-│   ├── middleware/
-│   ├── validators/
-│   └── service/
-├── config/
-├── database/
-│   ├── migrations/
-│   └── seeders/
-├── public/
-├── start/
-│   ├── kernel.ts
-│   └── routes.ts
-├── swagger.yaml
-├── tests/
-├── .env.example
-📄 Exemplo de .env
-Snippet de código
-
-# Geral
-PORT=3333
-HOST=0.0.0.0
-NODE_ENV=development
-APP_KEY= # Cole aqui a chave gerada
-LOG_LEVEL=debug
-
-# Banco de Dados
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=seu_usuario_db
-DB_PASSWORD=sua_senha_db
-DB_DATABASE=hidrowatch_db
-
-# Email (SMTP)
-SMTP_HOST=seu_host_smtp
-SMTP_PORT=587
-SMTP_USERNAME=seu_usuario_smtp
-SMTP_PASSWORD=sua_senha_smtp
-
-# Cloudinary
-CLOUDINARY_NAME=seu_cloud_name
-CLOUDINARY_API_KEY=sua_api_key
-CLOUDINARY_API_SECRET=sua_api_secret
-👨‍💻 Autor
-Guilherme Silva Rios 🔗 GitHub: @guilhermeprog3
-
-🌐 Portifolio: guilhermeriosdev.vercel.app
-
-
-### `swagger.yaml` Atualizado
-
-A documentação da API no `swagger.yaml` foi significativamente melhorada para corresponder à implementação atual:
-- **Consistência:** Todas as referências a `Object` foram alteradas para `Device` para alinhar com o código.
-- **Correções:** Corrigido o erro de digitação de `tittle` para `title` no esquema do dispositivo.
-- **Precisão dos Esquemas:** Os esquemas (`schemas`) foram atualizados para refletir com precisão os models da aplicação, como a remoção do campo `averageMeasurement` do schema `Measurement`.
-- **Endpoints Adicionados:** Foi adicionado o endpoint `PATCH /device/{device_id}/measurements/{id}` que estava implementado no controller, mas não documentado.
-
-```yaml
 openapi: 3.0.1
 info:
   title: Hidro-watch API
@@ -185,7 +7,6 @@ info:
 
     ### Desenvolvedor
     * [Guilherme Silva Rios](https://guilhermeriosdev.vercel.app)
-
 
 servers:
   - url: http://127.0.0.1:3333
@@ -611,7 +432,7 @@ paths:
     get:
       tags: [Dispositivos]
       summary: Listar dispositivos do usuário
-      description: Retorna uma lista de todos os dispositivos pertencentes ao usuário autenticado.
+      description: Retorna uma lista de todos os dispositivos que o usuário possui ou aos quais está associado.
       responses:
         '200':
           description: Lista de dispositivos.
@@ -639,7 +460,7 @@ paths:
     get:
       tags: [Dispositivos]
       summary: Obter detalhes de um dispositivo
-      description: Retorna os dados de um dispositivo específico.
+      description: Retorna os dados de um dispositivo específico. O usuário precisa ser o dono ou estar associado ao dispositivo.
       parameters:
         - name: id
           in: path
@@ -649,12 +470,14 @@ paths:
       responses:
         '200':
           description: Sucesso.
+        '403':
+          description: Acesso negado.
         '404':
           description: Dispositivo não encontrado.
     patch:
       tags: [Dispositivos]
       summary: Atualizar um dispositivo
-      description: Atualiza o título e/ou a localização de um dispositivo.
+      description: Atualiza o título e/ou a localização de um dispositivo. Apenas o dono pode realizar esta ação.
       parameters:
         - name: id
           in: path
@@ -675,7 +498,7 @@ paths:
     delete:
       tags: [Dispositivos]
       summary: Deletar um dispositivo
-      description: Remove um dispositivo e todas as suas medições associadas.
+      description: Remove um dispositivo e todas as suas medições associadas. Apenas o dono pode realizar esta ação.
       parameters:
         - name: id
           in: path
@@ -685,6 +508,44 @@ paths:
       responses:
         '203':
           description: Dispositivo deletado.
+
+  /device/{id}/associate:
+    post:
+      tags: [Dispositivos]
+      summary: Associar-se a um dispositivo
+      description: Cria uma associação entre o usuário autenticado e um dispositivo existente (compartilhamento).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Associação criada com sucesso.
+        '404':
+          description: Dispositivo não encontrado.
+        '409':
+          description: Usuário já associado a este dispositivo.
+
+  /device/{id}/leave:
+    delete:
+      tags: [Dispositivos]
+      summary: Desassociar-se de um dispositivo
+      description: Remove a associação (compartilhamento) do usuário autenticado com um dispositivo. O dono não pode usar esta rota.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Desassociação realizada com sucesso.
+        '403':
+          description: O dono do dispositivo não pode se desassociar.
+        '404':
+          description: Dispositivo não encontrado ou usuário não associado.
 
   /device/{id}/edit:
     patch:
@@ -720,7 +581,7 @@ paths:
     get:
       tags: [Medições]
       summary: Listar medições de um dispositivo
-      description: Retorna todas as medições de um dispositivo específico.
+      description: Retorna todas as medições de um dispositivo. Acesso permitido apenas para o dono ou usuários associados.
       parameters:
         - name: device_id
           in: path
@@ -730,10 +591,13 @@ paths:
       responses:
         '200':
           description: Lista de medições.
+        '403':
+          description: Acesso negado.
     post:
       tags: [Medições]
-      summary: Registrar nova medição
-      description: Adiciona uma nova medição a um dispositivo. Dispara notificações se a qualidade da água estiver fora dos padrões.
+      summary: Registrar nova medição (Hardware)
+      security: []
+      description: Adiciona uma nova medição a um dispositivo. Normalmente usado pelo hardware. Dispara notificações se a qualidade da água estiver fora dos padrões.
       parameters:
         - name: device_id
           in: path
@@ -754,7 +618,7 @@ paths:
     get:
       tags: [Medições]
       summary: Obter uma medição específica
-      description: Retorna os detalhes de uma medição específica de um dispositivo.
+      description: Retorna os detalhes de uma medição específica. Acesso permitido apenas para o dono ou usuários associados.
       parameters:
         - name: device_id
           in: path
@@ -769,12 +633,14 @@ paths:
       responses:
         '200':
           description: Sucesso.
+        '403':
+          description: Acesso negado.
         '404':
           description: Medição não encontrada.
     patch:
       tags: [Medições]
       summary: Atualizar uma medição
-      description: Atualiza os valores de uma medição específica.
+      description: Atualiza os valores de uma medição específica. Acesso permitido apenas para o dono ou usuários associados.
       parameters:
         - name: device_id
           in: path
@@ -794,12 +660,12 @@ paths:
       responses:
         '200':
           description: Medição atualizada.
-        '400':
-          description: Erro na atualização.
+        '403':
+          description: Acesso negado.
     delete:
       tags: [Medições]
       summary: Deletar uma medição
-      description: Remove uma medição específica.
+      description: Remove uma medição específica. Acesso permitido apenas para o dono ou usuários associados.
       parameters:
         - name: device_id
           in: path
@@ -814,12 +680,14 @@ paths:
       responses:
         '203':
           description: Medição deletada.
+        '403':
+          description: Acesso negado.
 
   /device/{device_id}/weekly-average:
     get:
       tags: [Medições]
       summary: Média semanal de medições
-      description: Retorna a média de medições para cada dia dos últimos 7 dias.
+      description: Retorna a média de medições para cada dia dos últimos 7 dias. Acesso permitido apenas para o dono ou usuários associados.
       parameters:
         - name: device_id
           in: path
@@ -829,12 +697,14 @@ paths:
       responses:
         '200':
           description: Sucesso.
+        '403':
+          description: Acesso negado.
 
   /device/{device_id}/measurements-latest:
     get:
       tags: [Medições]
       summary: Obter a última medição
-      description: Retorna a medição mais recente de um dispositivo.
+      description: Retorna a medição mais recente de um dispositivo. Acesso permitido apenas para o dono ou usuários associados.
       parameters:
         - name: device_id
           in: path
@@ -844,5 +714,7 @@ paths:
       responses:
         '200':
           description: Sucesso.
+        '403':
+          description: Acesso negado.
         '404':
           description: Nenhuma medição encontrada.

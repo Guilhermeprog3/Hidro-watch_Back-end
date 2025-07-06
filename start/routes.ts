@@ -33,6 +33,7 @@ router.group(() => {
 
   router.resource('device', DevicesController).apiOnly()
   router.post('device/:id/associate', [DevicesController, 'associateUser'])
+  router.delete('device/:id/leave', [DevicesController, 'leaveDevice'])
   router.patch('device/:id/edit', [DevicesController, 'edit'])
   router.patch('device/:id/toggle-connected', [DevicesController, 'toggleConnected'])
 
